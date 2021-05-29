@@ -1,7 +1,6 @@
 package com.oskarro.batcher.batch;
 
 import com.oskarro.batcher.model.Track;
-import org.apache.commons.logging.LogFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.item.ItemProcessor;

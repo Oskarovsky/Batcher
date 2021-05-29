@@ -8,6 +8,7 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
@@ -22,21 +23,24 @@ import org.springframework.core.io.ClassPathResource;
 
 import javax.sql.DataSource;
 
-@EnableBatchProcessing
 @Configuration
-public class CsvFileToDatabaseConfig {
+@EnableBatchProcessing
+public class CsvToDatabaseJobConfig {
 
     public final JobBuilderFactory jobBuilderFactory;
     public final StepBuilderFactory stepBuilderFactory;
     public final DataSource dataSource;
 
-    public CsvFileToDatabaseConfig(JobBuilderFactory jobBuilderFactory, StepBuilderFactory stepBuilderFactory, DataSource dataSource) {
+    public CsvToDatabaseJobConfig(JobBuilderFactory jobBuilderFactory,
+                                  StepBuilderFactory stepBuilderFactory,
+                                  DataSource dataSource) {
         this.jobBuilderFactory = jobBuilderFactory;
         this.stepBuilderFactory = stepBuilderFactory;
         this.dataSource = dataSource;
     }
 
     @Bean
+    @StepScope
     public FlatFileItemReader<Track> csvTrackReader() {
         FlatFileItemReader<Track> reader = new FlatFileItemReader<>();
         reader.setResource(new ClassPathResource("tracklist.csv"));
@@ -69,24 +73,22 @@ public class CsvFileToDatabaseConfig {
 
     // begin job info
     @Bean
-    public Step csvFileToDatabaseStep() {
-        return stepBuilderFactory.get("csvFileToDatabaseStep")
+    Job csvToDatabaseJob(JobCompletionNotificationListener listener) {
+        return jobBuilderFactory.get("csvToDatabaseJob")
+                .incrementer(new RunIdIncrementer())
+                .listener(listener)
+                .flow(csvToDatabaseStep())
+                .end()
+                .build();
+    }
+
+    @Bean
+    public Step csvToDatabaseStep() {
+        return stepBuilderFactory.get("csvToDatabaseStep")
                 .<Track, Track>chunk(1)
                 .reader(csvTrackReader())
                 .processor(csvTrackProcessor())
                 .writer(csvTrackWriter())
                 .build();
     }
-
-    @Bean
-    Job csvFileToDatabaseJob(JobCompletionNotificationListener listener) {
-        return jobBuilderFactory.get("csvFileToDatabaseJob")
-                .incrementer(new RunIdIncrementer())
-                .listener(listener)
-                .flow(csvFileToDatabaseStep())
-                .end()
-                .build();
-    }
-
-
 }
