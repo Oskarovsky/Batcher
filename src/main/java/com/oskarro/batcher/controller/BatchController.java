@@ -46,7 +46,9 @@ public class BatchController {
     public void startJob() {
         Map<String, JobParameter> parameters = new HashMap<>();
         try {
-            JobExecution jobExecution = jobLauncher.run(job, new JobParameters(parameters));
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addLong("uniqueness", System.nanoTime()).toJobParameters();
+            JobExecution jobExecution = jobLauncher.run(job, jobParameters);
         } catch (JobExecutionAlreadyRunningException | JobRestartException | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
             e.printStackTrace();
         }

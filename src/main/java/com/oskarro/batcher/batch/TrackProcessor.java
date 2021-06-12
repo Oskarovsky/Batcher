@@ -11,7 +11,7 @@ public class TrackProcessor implements ItemProcessor<Track, Track> {
     private static final Logger log = LoggerFactory.getLogger(TrackProcessor.class);
 
     @Override
-    public Track process(final Track track) throws Exception {
+    public Track process(final Track track) {
         final String id = track.getId();
         final String title = track.getTitle();
         final String artist = track.getArtist();

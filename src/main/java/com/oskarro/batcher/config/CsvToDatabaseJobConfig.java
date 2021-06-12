@@ -39,6 +39,7 @@ public class CsvToDatabaseJobConfig {
         this.dataSource = dataSource;
     }
 
+
     @Bean
     @StepScope
     public FlatFileItemReader<Track> csvTrackReader() {
@@ -85,7 +86,7 @@ public class CsvToDatabaseJobConfig {
     @Bean
     public Step csvToDatabaseStep() {
         return stepBuilderFactory.get("csvToDatabaseStep")
-                .<Track, Track>chunk(1)
+                .<Track, Track>chunk(5)
                 .reader(csvTrackReader())
                 .processor(csvTrackProcessor())
                 .writer(csvTrackWriter())
