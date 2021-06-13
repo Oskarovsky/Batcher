@@ -1,4 +1,4 @@
-package com.oskarro.batcher.csvToDatabase;
+package com.oskarro.batcher.batch.csvToDatabase;
 
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersInvalidException;

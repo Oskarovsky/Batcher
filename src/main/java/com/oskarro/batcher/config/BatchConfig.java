@@ -1,6 +1,6 @@
 package com.oskarro.batcher.config;
 
-import com.oskarro.batcher.csvToDatabase.CsvToDatabaseJobConfig;
+import com.oskarro.batcher.batch.csvToDatabase.CsvToDatabaseJobConfig;
 import org.springframework.batch.core.JobParametersValidator;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.support.ApplicationContextFactory;
@@ -39,6 +39,7 @@ public class BatchConfig {
     public JobParametersValidator validator() {
         DefaultJobParametersValidator validator = new DefaultJobParametersValidator();
         validator.setRequiredKeys(new String[] {"fileName"});
+        validator.setOptionalKeys(new String[] {"uniqueName"});
         return validator;
     }
 

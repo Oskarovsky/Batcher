@@ -1,6 +1,6 @@
-package com.oskarro.batcher.csvToDatabase;
+package com.oskarro.batcher.batch.csvToDatabase;
 
-import com.oskarro.batcher.batch.TrackProcessor;
+import com.oskarro.batcher.config.DailyJobTimestamper;
 import com.oskarro.batcher.model.Track;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -10,7 +10,6 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.CompositeJobParametersValidator;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
-import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
@@ -45,13 +44,12 @@ public class CsvToDatabaseJobConfig {
     }
 
 
-    // begin job info
-    @Bean
-    Job csvToDatabaseJob(JobCompletionNotificationListener listener) {
+    @Bean(name = "csvToDatabaseJob")
+    public Job csvToDatabaseJob(JobCompletionNotificationListener listener) {
         return jobBuilderFactory.get("csvToDatabaseJob")
-                .incrementer(new RunIdIncrementer())
                 .listener(listener)
                 .validator(csvTrackValidator())
+                .incrementer(new DailyJobTimestamper())
                 .flow(csvToDatabaseStep())
                 .end()
                 .build();
@@ -72,7 +70,7 @@ public class CsvToDatabaseJobConfig {
         CompositeJobParametersValidator validator = new CompositeJobParametersValidator();
         DefaultJobParametersValidator defaultJobParametersValidator = new DefaultJobParametersValidator(
                 new String[] {"fileName"},
-                new String[] {"uniqueName"}
+                new String[] {"uniqueName", "currentDate"}
         );
         defaultJobParametersValidator.afterPropertiesSet();
         validator.setValidators(

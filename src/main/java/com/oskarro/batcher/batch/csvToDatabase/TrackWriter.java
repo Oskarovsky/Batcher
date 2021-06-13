@@ -1,6 +1,4 @@
-package com.oskarro.batcher.batch;
-
-import com.oskarro.batcher.model.Track;
+package com.oskarro.batcher.batch.csvToDatabase;
 
 import javax.batch.api.chunk.ItemWriter;
 import java.io.Serializable;

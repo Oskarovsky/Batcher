@@ -1,11 +1,11 @@
-package com.oskarro.batcher.csvToDatabase;
+package com.oskarro.batcher.batch.csvToDatabase;
 
 import com.oskarro.batcher.model.Track;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.listener.JobExecutionListenerSupport;
+import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -13,7 +13,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Component
-public class JobCompletionNotificationListener extends JobExecutionListenerSupport {
+public class JobCompletionNotificationListener implements JobExecutionListener {
+
+    private static final String START_MESSAGE = "%s is beginning execution";
+    private static final String END_MESSAGE = "=== Procedure %s has completed with the status %s === ";
 
     private static final Logger log = LoggerFactory.getLogger(JobCompletionNotificationListener.class);
 
@@ -22,6 +25,12 @@ public class JobCompletionNotificationListener extends JobExecutionListenerSuppo
     @Autowired
     public JobCompletionNotificationListener(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public void beforeJob(JobExecution jobExecution) {
+        log.info("============ JOB STARTED ============ \n");
+        System.out.printf(START_MESSAGE, jobExecution.getJobInstance().getJobName());
     }
 
     @Override
@@ -41,7 +50,7 @@ public class JobCompletionNotificationListener extends JobExecutionListenerSuppo
             for (Track track : results) {
                 log.info("Discovered <" + track + "> in the database.");
             }
-
         }
+        System.out.printf(END_MESSAGE, jobExecution.getJobInstance().getJobName(), jobExecution.getStatus());
     }
 }
