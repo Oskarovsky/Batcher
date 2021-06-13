@@ -1,20 +1,24 @@
 package com.oskarro.batcher.config;
 
+import com.oskarro.batcher.csvToDatabase.CsvToDatabaseJobConfig;
+import org.springframework.batch.core.JobParametersValidator;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.support.ApplicationContextFactory;
 import org.springframework.batch.core.configuration.support.GenericApplicationContextFactory;
+import org.springframework.batch.core.job.DefaultJobParametersValidator;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.SimpleJobLauncher;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
 import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 
+@Configuration
 @EnableBatchProcessing
-//@Configuration
 public class BatchConfig {
 
     DataSource dataSource;
@@ -29,6 +33,13 @@ public class BatchConfig {
         factory.setTransactionManager(getTransactionManager());
         factory.afterPropertiesSet();
         return (JobRepository) factory.getObject();
+    }
+
+    @Bean
+    public JobParametersValidator validator() {
+        DefaultJobParametersValidator validator = new DefaultJobParametersValidator();
+        validator.setRequiredKeys(new String[] {"fileName"});
+        return validator;
     }
 
     @Bean

@@ -1,4 +1,4 @@
-package com.oskarro.batcher.batch;
+package com.oskarro.batcher.csvToDatabase;
 
 import com.oskarro.batcher.model.Track;
 import org.slf4j.Logger;

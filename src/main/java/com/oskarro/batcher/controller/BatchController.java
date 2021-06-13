@@ -10,9 +10,6 @@ import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteExcep
 import org.springframework.batch.core.repository.JobRestartException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api")
 public class BatchController {
@@ -30,26 +27,25 @@ public class BatchController {
     @RequestMapping(value = "/batch", method = RequestMethod.POST)
     @ResponseBody
     public String sendBatch(@RequestBody String content)
-            throws JobInstanceAlreadyCompleteException, JobExecutionAlreadyRunningException, JobParametersInvalidException, JobRestartException {
-//        JobParameters jobParameters = new JobParametersBuilder()
-//                .addString("content", content)
-//                .toJobParameters();
-//        JobExecution jobExecution = jobLauncher.run(job, jobParameters);
-        System.out.println("Encoded content: " + content);
+            throws JobInstanceAlreadyCompleteException, JobExecutionAlreadyRunningException,
+            JobParametersInvalidException, JobRestartException {
+        System.out.println("==== Encoded content ====\n" + content);
         Base64 base64 = new Base64();
         String decodedString = new String(base64.decode(content));
-        System.out.println("Decoded content:" + decodedString);
+        System.out.println("==== Decoded content ====\n" + decodedString);
         return "Request with batch has been sent";
     }
 
-    @GetMapping("/job")
-    public void startJob() {
-        Map<String, JobParameter> parameters = new HashMap<>();
+    @RequestMapping(value = "/job/{fileName}", method = RequestMethod.GET)
+    public void startJob(@PathVariable String fileName) {
         try {
             JobParameters jobParameters = new JobParametersBuilder()
-                    .addLong("uniqueness", System.nanoTime()).toJobParameters();
+                    .addLong("uniqueName", System.nanoTime())
+                    .addString("fileName", fileName + ".csv")
+                    .toJobParameters();
             JobExecution jobExecution = jobLauncher.run(job, jobParameters);
-        } catch (JobExecutionAlreadyRunningException | JobRestartException | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
+        } catch (JobExecutionAlreadyRunningException | JobRestartException
+                | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
             e.printStackTrace();
         }
     }

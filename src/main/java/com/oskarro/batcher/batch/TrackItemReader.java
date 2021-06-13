@@ -2,9 +2,6 @@ package com.oskarro.batcher.batch;
 
 import com.oskarro.batcher.model.Track;
 import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.NonTransientResourceException;
-import org.springframework.batch.item.ParseException;
-import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.batch.item.support.IteratorItemReader;
 
 import java.util.List;
