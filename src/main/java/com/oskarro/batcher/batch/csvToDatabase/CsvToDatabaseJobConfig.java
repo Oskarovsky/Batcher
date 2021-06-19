@@ -10,6 +10,7 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.CompositeJobParametersValidator;
 import org.springframework.batch.core.job.DefaultJobParametersValidator;
+import org.springframework.batch.core.listener.JobListenerFactoryBean;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.util.Arrays;
@@ -34,22 +36,25 @@ public class CsvToDatabaseJobConfig {
     public final JobBuilderFactory jobBuilderFactory;
     public final StepBuilderFactory stepBuilderFactory;
     public final DataSource dataSource;
+    private final JdbcTemplate jdbcTemplate;
 
     public CsvToDatabaseJobConfig(JobBuilderFactory jobBuilderFactory,
                                   StepBuilderFactory stepBuilderFactory,
-                                  DataSource dataSource) {
+                                  DataSource dataSource,
+                                  JdbcTemplate jdbcTemplate) {
         this.jobBuilderFactory = jobBuilderFactory;
         this.stepBuilderFactory = stepBuilderFactory;
         this.dataSource = dataSource;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
 
     @Bean(name = "csvToDatabaseJob")
-    public Job csvToDatabaseJob(JobCompletionNotificationListener listener) {
+    public Job csvToDatabaseJob() {
         return jobBuilderFactory.get("csvToDatabaseJob")
-                .listener(listener)
                 .validator(csvTrackValidator())
                 .incrementer(new DailyJobTimestamper())
+                .listener(JobListenerFactoryBean.getListener(new JobCompletionNotificationListener(jdbcTemplate)))
                 .flow(csvToDatabaseStep())
                 .end()
                 .build();

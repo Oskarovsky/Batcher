@@ -27,10 +27,15 @@ public class BatchController {
     @Qualifier("requestToDatabaseJob")
     Job requestToDatabaseJob;
 
-    public BatchController(JobLauncher jobLauncher, Job csvToDatabaseJob, Job requestToDatabaseJob) {
+    @Qualifier("synchronizeDatabaseJob")
+    Job synchronizeDatabaseJob;
+
+    public BatchController(JobLauncher jobLauncher, Job csvToDatabaseJob, Job requestToDatabaseJob,
+                           Job synchronizeDatabaseJob) {
         this.jobLauncher = jobLauncher;
         this.csvToDatabaseJob = csvToDatabaseJob;
         this.requestToDatabaseJob = requestToDatabaseJob;
+        this.synchronizeDatabaseJob = synchronizeDatabaseJob;
     }
 
     @RequestMapping(value = "/batch", method = RequestMethod.POST)
@@ -52,7 +57,7 @@ public class BatchController {
         return "Request with batch has been sent";
     }
 
-    @RequestMapping(value = "/job/{fileName}", method = RequestMethod.GET)
+    @RequestMapping(value = "/job/file/{fileName}", method = RequestMethod.GET)
     public void saveTracksFromCsvToDatabase(@PathVariable String fileName) {
         try {
             JobParameters jobParameters = new JobParametersBuilder()
@@ -64,5 +69,10 @@ public class BatchController {
                 | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
             e.printStackTrace();
         }
+    }
+
+    @RequestMapping(value = "/job/synchronize", method = RequestMethod.GET)
+    public void synchronizeDatabase() {
+
     }
 }
