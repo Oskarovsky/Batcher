@@ -2,12 +2,12 @@ package com.oskarro.batcher.model;
 
 import lombok.*;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Getter
 @Setter
+@Entity
+@Table(name = "tracks")
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor

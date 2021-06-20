@@ -73,6 +73,14 @@ public class BatchController {
 
     @RequestMapping(value = "/job/synchronize", method = RequestMethod.GET)
     public void synchronizeDatabase() {
-
+        try {
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addLong("uniqueName", System.nanoTime())
+                    .toJobParameters();
+            JobExecution jobExecution = jobLauncher.run(synchronizeDatabaseJob, jobParameters);
+        } catch (JobExecutionAlreadyRunningException | JobRestartException |
+                JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
+            e.printStackTrace();
+        }
     }
 }
