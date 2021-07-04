@@ -4,6 +4,8 @@ import com.oskarro.batcher.environment.backup.model.Song;
 import com.oskarro.batcher.environment.backup.repo.SongRepository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 public class BackupDatabaseService {
 
     SongRepository songRepository;
@@ -20,12 +22,17 @@ public class BackupDatabaseService {
     }
 
     @Transactional(transactionManager = "backupTransactionManager")
-    public void validateSong(String code) {
-        Song song = songRepository.findByCode(code);
-        if (song != null) {
-            System.out.printf("Track with code %s already exists in SONG_REPO%n", code);
+    public String validateSong(String code) {
+        List<Song> song = songRepository.findAllByCode(code);
+        if (song.size() == 1) {
+//            System.out.printf("Track with code %s already exists in SONG_REPO%n", code);
+            return "UPDATE";
+        } else if (song.size() > 1) {
+//            System.out.printf("There are too much results for code %s %n", code);
+            return "DELETE";
         } else {
-            System.out.printf("Track with code %s doesn't exist in SONG_REPO%n", code);
+//            System.out.printf("Track with code %s doesn't exist in SONG_REPO%n", code);
+            return "INSERT";
         }
     }
 }

@@ -1,11 +1,13 @@
 package com.oskarro.batcher.batch.synchronizeDatabase;
 
+import com.oskarro.batcher.batch.csvToDatabase.TrackProcessor;
 import com.oskarro.batcher.batch.synchronizeDatabase.config.BackupDatabaseConfiguration;
 import com.oskarro.batcher.batch.synchronizeDatabase.config.MainDatabaseConfiguration;
 import com.oskarro.batcher.batch.synchronizeDatabase.service.BackupDatabaseService;
 import com.oskarro.batcher.batch.synchronizeDatabase.service.MainDatabaseService;
 import com.oskarro.batcher.environment.backup.repo.SongRepository;
 import com.oskarro.batcher.environment.main.model.Track;
+import com.oskarro.batcher.environment.main.model.TrackRowMapper;
 import com.oskarro.batcher.environment.main.repo.TrackRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -14,6 +16,11 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.step.tasklet.CallableTaskletAdapter;
 import org.springframework.batch.core.step.tasklet.MethodInvokingTaskletAdapter;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -63,9 +70,11 @@ public class SynchronizeConfig {
     public Job synchronizeDatabaseJob() {
         return this.jobBuilderFactory
                 .get("synchronizeDatabaseJob")
-                .start(printStep())
+//                .start(printStep())
+                .start(methodInvokingBackupStep())
                 .next(methodInvokingMainStep())
-                .next(methodInvokingBackupStep())
+//                .next(methodInvokingBackupStep())
+                .next(databaseSynchronizationStep())
                 .build();
     }
 
@@ -138,6 +147,46 @@ public class SynchronizeConfig {
     public BackupDatabaseService backupDatabaseService() {
         return new BackupDatabaseService(songRepository);
     }
+
+
+    @Bean
+    public Step databaseSynchronizationStep() {
+        return stepBuilderFactory
+                .get("databaseSynchronizationStep")
+                .<Track, Track>chunk(10)
+                .reader(trackItemReader())
+                .processor(trackProcessor())
+                .writer(trackItemWriter())
+                .build();
+    }
+
+    @Bean
+    public JdbcCursorItemReader<Track> trackItemReader(){
+        JdbcCursorItemReader<Track> reader = new JdbcCursorItemReader<>();
+        reader.setSql("SELECT id, title, artist, version, url, code FROM tracks");
+        reader.setDataSource(mainDatabaseConfiguration.mainDataSource());
+        reader.setFetchSize(100);
+        reader.setRowMapper(new TrackRowMapper());
+        return reader;
+    }
+
+    @Bean
+    ItemProcessor<Track, Track> trackProcessor() {
+        return new DatabaseProcessor(backupDatabaseService(), mainDatabaseService());
+    }
+
+    @Bean
+    public ItemWriter<Track> trackItemWriter(){
+        JdbcBatchItemWriter<Track> itemWriter = new JdbcBatchItemWriter<>();
+        itemWriter.setDataSource(backupDatabaseConfiguration.backupDataSource());
+        itemWriter.setSql(
+                "INSERT INTO songs (id, title, artist, version, url, code) " +
+                        "VALUES (nextval('song_id_seq'), :title, :artist, :version, :url, :code)");
+        itemWriter.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>());
+        itemWriter.afterPropertiesSet();
+        return itemWriter;
+    }
+
 
 
 }

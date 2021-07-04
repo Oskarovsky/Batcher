@@ -56,7 +56,8 @@ public class CsvToDatabaseJobConfig {
 
     @Bean(name = "csvToDatabaseJob")
     public Job csvToDatabaseJob() {
-        return jobBuilderFactory.get("csvToDatabaseJob")
+        return jobBuilderFactory
+                .get("csvToDatabaseJob")
                 .validator(csvTrackValidator())
                 .incrementer(new DailyJobTimestamper())
                 .listener(JobListenerFactoryBean.getListener(new JobCompletionNotificationListener(jdbcTemplate)))
@@ -67,7 +68,8 @@ public class CsvToDatabaseJobConfig {
 
     @Bean
     public Step csvToDatabaseStep() {
-        return stepBuilderFactory.get("csvToDatabaseStep")
+        return stepBuilderFactory
+                .get("csvToDatabaseStep")
                 .<Track, Track>chunk(5)
                 .reader(csvTrackReader(WILL_BE_INJECTED))
                 .processor(csvTrackProcessor())

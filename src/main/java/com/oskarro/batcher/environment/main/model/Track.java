@@ -10,6 +10,7 @@ import javax.persistence.*;
 @Table(name = "tracks")
 @ToString
 @AllArgsConstructor
+@Builder
 @NoArgsConstructor
 public class Track {
 
