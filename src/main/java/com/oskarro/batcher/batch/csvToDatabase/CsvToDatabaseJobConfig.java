@@ -1,7 +1,8 @@
 package com.oskarro.batcher.batch.csvToDatabase;
 
+import com.oskarro.batcher.config.BatchConfig;
 import com.oskarro.batcher.config.DailyJobTimestamper;
-import com.oskarro.batcher.model.Track;
+import com.oskarro.batcher.model.main.Track;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -19,6 +20,7 @@ import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;

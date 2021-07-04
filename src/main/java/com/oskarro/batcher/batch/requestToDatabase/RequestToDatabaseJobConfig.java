@@ -1,6 +1,6 @@
 package com.oskarro.batcher.batch.requestToDatabase;
 
-import com.oskarro.batcher.model.Track;
+import com.oskarro.batcher.model.main.Track;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;

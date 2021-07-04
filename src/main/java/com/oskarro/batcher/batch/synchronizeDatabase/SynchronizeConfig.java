@@ -1,6 +1,6 @@
 package com.oskarro.batcher.batch.synchronizeDatabase;
 
-import com.oskarro.batcher.repository.TrackRepository;
+import com.oskarro.batcher.repository.main.TrackRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;

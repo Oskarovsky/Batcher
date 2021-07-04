@@ -1,6 +1,6 @@
-package com.oskarro.batcher.repository;
+package com.oskarro.batcher.repository.main;
 
-import com.oskarro.batcher.model.Track;
+import com.oskarro.batcher.model.main.Track;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,4 +1,4 @@
-package com.oskarro.batcher.model;
+package com.oskarro.batcher.model.main;
 
 import lombok.*;
 

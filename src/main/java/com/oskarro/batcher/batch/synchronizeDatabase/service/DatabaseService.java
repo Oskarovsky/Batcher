@@ -1,9 +1,6 @@
 package com.oskarro.batcher.batch.synchronizeDatabase.service;
 
-import com.oskarro.batcher.model.Track;
-import com.oskarro.batcher.repository.TrackRepository;
-import lombok.NoArgsConstructor;
-import org.springframework.stereotype.Service;
+import com.oskarro.batcher.repository.main.TrackRepository;
 
 public class DatabaseService {
 

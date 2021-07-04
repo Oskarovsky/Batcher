@@ -11,9 +11,8 @@ import org.springframework.batch.core.launch.support.SimpleJobLauncher;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
 import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -22,7 +21,6 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
-import java.util.Objects;
 
 @Configuration
 @EnableBatchProcessing
@@ -34,33 +32,37 @@ public class BatchConfig {
         this.env = env;
     }
 
+    @Bean
     @Primary
-    @Bean(name = "dataSource")
-    @ConfigurationProperties(prefix = "spring.datasource")
-    public DataSource dataSource() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName(Objects.requireNonNull(env.getProperty("spring.datasource.driver-class-name")));
-        dataSource.setUrl(Objects.requireNonNull(env.getProperty("spring.datasource.url")));
-        dataSource.setUsername(Objects.requireNonNull(env.getProperty("spring.datasource.username")));
-        dataSource.setPassword(Objects.requireNonNull(env.getProperty("spring.datasource.password")));
-        return dataSource;
+    @ConfigurationProperties("spring.datasource")
+    public DataSourceProperties mainDataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+    @Bean(name = "mainDataSource")
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource.configuration")
+    public DataSource mainDataSource() {
+        return mainDataSourceProperties().initializeDataSourceBuilder().type(DriverManagerDataSource.class).build();
+    }
+
+
+    @Bean
+    @ConfigurationProperties("backup.datasource")
+    public DataSourceProperties backupDataSourceProperties() {
+        return new DataSourceProperties();
     }
 
     @Bean(name = "backupDataSource")
-    @ConfigurationProperties(prefix = "backup.datasource")
-    public DataSource dataSourceBackup() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName(Objects.requireNonNull(env.getProperty("backup.datasource.driver-class-name")));
-        dataSource.setUrl(Objects.requireNonNull(env.getProperty("backup.datasource.url")));
-        dataSource.setUsername(Objects.requireNonNull(env.getProperty("backup.datasource.username")));
-        dataSource.setPassword(Objects.requireNonNull(env.getProperty("backup.datasource.password")));
-        return dataSource;
+    @ConfigurationProperties(prefix = "backup.datasource.configuration")
+    public DataSource backupDataSource() {
+        return backupDataSourceProperties().initializeDataSourceBuilder().type(DriverManagerDataSource.class).build();
     }
 
 
     private JobRepository getJobRepository() throws Exception {
         JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
-        factory.setDataSource(dataSource());
+        factory.setDataSource(mainDataSource());
         factory.setTransactionManager(getTransactionManager());
         factory.afterPropertiesSet();
         return (JobRepository) factory.getObject();
