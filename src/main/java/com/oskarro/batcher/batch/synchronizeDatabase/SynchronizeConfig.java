@@ -5,6 +5,7 @@ import com.oskarro.batcher.batch.synchronizeDatabase.config.MainDatabaseConfigur
 import com.oskarro.batcher.batch.synchronizeDatabase.service.BackupDatabaseService;
 import com.oskarro.batcher.batch.synchronizeDatabase.service.MainDatabaseService;
 import com.oskarro.batcher.environment.backup.repo.SongRepository;
+import com.oskarro.batcher.environment.main.model.Track;
 import com.oskarro.batcher.environment.main.repo.TrackRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 
 @EnableAutoConfiguration
@@ -72,6 +74,7 @@ public class SynchronizeConfig {
         return this.stepBuilderFactory
                 .get("printStep")
                 .tasklet(tasklet())
+                .transactionManager(mainDatabaseConfiguration.mainTransactionManager())
                 .build();
     }
 
@@ -119,6 +122,8 @@ public class SynchronizeConfig {
     @Bean
     public Callable<RepeatStatus> callableObject() {
         return () -> {
+            List<Track> tracks = mainDatabaseService().processTracks();
+            tracks.forEach(t -> backupDatabaseService().validateSong(t.getCode()));
             System.out.println("This was executed in another thread");
             return RepeatStatus.FINISHED;
         };

@@ -17,8 +17,9 @@ public class TrackProcessor implements ItemProcessor<Track, Track> {
         final String artist = track.getArtist();
         final String version = track.getVersion();
         final String url = track.getUrl();
+        final String code = track.getCode();
 
-        final Track transformedTrack = new Track(id, title, artist, version, url);
+        final Track transformedTrack = new Track(id, title, artist, version, url, code);
 
         log.info("Converting (" + track + ") into (" + transformedTrack + ")");
 

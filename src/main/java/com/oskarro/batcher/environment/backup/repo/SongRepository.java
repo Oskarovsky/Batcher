@@ -10,4 +10,6 @@ import java.io.Serializable;
 public interface SongRepository extends JpaRepository<Song, Serializable> {
 
     long count();
+
+    Song findByCode(String code);
 }

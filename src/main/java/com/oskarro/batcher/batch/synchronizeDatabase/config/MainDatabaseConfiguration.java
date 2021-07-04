@@ -20,7 +20,10 @@ import java.util.Objects;
 @Configuration
 @PropertySource({"classpath:main-database.properties"})
 @EnableJpaRepositories(
-        basePackages = {"com.oskarro.batcher.model.main", "com.oskarro.batcher.repository.main"},
+        basePackages = {
+                "com.oskarro.batcher.environment.main.model",
+                "com.oskarro.batcher.environment.main.repo"
+        },
         entityManagerFactoryRef = "mainEntityManager",
         transactionManagerRef = "mainTransactionManager")
 public class MainDatabaseConfiguration {
@@ -47,7 +50,7 @@ public class MainDatabaseConfiguration {
     public LocalContainerEntityManagerFactoryBean mainEntityManager() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(mainDataSource());
-        em.setPackagesToScan("com.oskarro.batcher.model.main");
+        em.setPackagesToScan("com.oskarro.batcher.environment.main.model");
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);
@@ -55,7 +58,6 @@ public class MainDatabaseConfiguration {
         properties.put("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
         properties.put("hibernate.dialect", env.getProperty("hibernate.dialect"));
         em.setJpaPropertyMap(properties);
-
         return em;
     }
 

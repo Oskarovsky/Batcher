@@ -20,4 +20,5 @@ public class Song {
     private String artist;
     private String version;
     private String url;
+    private String code;
 }

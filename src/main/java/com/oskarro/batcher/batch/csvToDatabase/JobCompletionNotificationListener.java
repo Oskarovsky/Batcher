@@ -38,13 +38,14 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
         if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
             log.info("============ JOB FINISHED ============ Verifying the results....\n");
 
-            List<Track> results = jdbcTemplate.query("SELECT id, title, artist, version, url FROM tracks",
+            List<Track> results = jdbcTemplate.query("SELECT id, title, artist, version, url, code FROM tracks",
                     (rs, row) -> new Track(
                             rs.getString(1),
                             rs.getString(2),
                             rs.getString(3),
                             rs.getString(4),
-                            rs.getString(5))
+                            rs.getString(5),
+                            rs.getString(6))
             );
 
             for (Track track : results) {

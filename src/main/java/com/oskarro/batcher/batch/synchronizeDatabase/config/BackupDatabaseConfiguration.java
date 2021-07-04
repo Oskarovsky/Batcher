@@ -22,7 +22,10 @@ import java.util.Objects;
 @Configuration
 @PropertySource({"classpath:backup-database.properties"})
 @EnableJpaRepositories(
-        basePackages = {"com.oskarro.batcher.model.backup", "com.oskarro.batcher.repository.backup"},
+        basePackages = {
+                "com.oskarro.batcher.environment.backup.model",
+                "com.oskarro.batcher.environment.backup.repo"
+        },
         entityManagerFactoryRef = "backupEntityManager",
         transactionManagerRef = "backupTransactionManager")
 public class BackupDatabaseConfiguration {
@@ -47,7 +50,7 @@ public class BackupDatabaseConfiguration {
     public LocalContainerEntityManagerFactoryBean backupEntityManager() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(backupDataSource());
-        em.setPackagesToScan("com.oskarro.batcher.model.backup");
+        em.setPackagesToScan("com.oskarro.batcher.environment.backup.model");
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);
@@ -55,7 +58,6 @@ public class BackupDatabaseConfiguration {
         properties.put("hibernate.hbm2ddl.auto", env.getProperty("hibernate.hbm2ddl.auto"));
         properties.put("hibernate.dialect", env.getProperty("hibernate.dialect"));
         em.setJpaPropertyMap(properties);
-
         return em;
     }
 

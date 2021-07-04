@@ -2,6 +2,7 @@ package com.oskarro.batcher.batch.csvToDatabase;
 
 import com.oskarro.batcher.batch.synchronizeDatabase.config.MainDatabaseConfiguration;
 import com.oskarro.batcher.config.DailyJobTimestamper;
+import com.oskarro.batcher.config.LoggingStepStartStopListener;
 import com.oskarro.batcher.environment.main.model.Track;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -94,7 +95,7 @@ public class CsvToDatabaseJobConfig {
         reader.setResource(new ClassPathResource(csvFileName));
         reader.setLineMapper(new DefaultLineMapper<>() {{
             setLineTokenizer(new DelimitedLineTokenizer() {{
-                setNames("title", "artist", "version", "url");
+                setNames("title", "artist", "version", "url", "code");
             }});
             setFieldSetMapper(new BeanWrapperFieldSetMapper<>() {{
                 setTargetType(Track.class);
@@ -113,8 +114,8 @@ public class CsvToDatabaseJobConfig {
         JdbcBatchItemWriter<Track> csvTrackWriter = new JdbcBatchItemWriter<>();
         csvTrackWriter.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>());
         csvTrackWriter.setSql(
-                "INSERT INTO tracks (id, title, artist, version, url) " +
-                        "VALUES (nextval('track_id_seq'), :title, :artist, :version, :url)");
+                "INSERT INTO tracks (id, title, artist, version, url, code) " +
+                        "VALUES (nextval('track_id_seq'), :title, :artist, :version, :url, :code)");
         csvTrackWriter.setDataSource(mainDatabaseConfiguration.mainDataSource());
         return csvTrackWriter;
     }
