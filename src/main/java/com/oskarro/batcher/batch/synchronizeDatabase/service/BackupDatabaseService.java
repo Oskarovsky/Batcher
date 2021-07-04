@@ -1,6 +1,6 @@
 package com.oskarro.batcher.batch.synchronizeDatabase.service;
 
-import com.oskarro.batcher.repository.backup.SongRepository;
+import com.oskarro.batcher.environment.backup.repo.SongRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 public class BackupDatabaseService {

@@ -1,4 +1,4 @@
-package com.oskarro.batcher.batch.synchronizeDatabase;
+package com.oskarro.batcher.batch.synchronizeDatabase.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +15,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.util.HashMap;
+import java.util.Objects;
 
 @Configuration
 @PropertySource({"classpath:main-database.properties"})
@@ -22,20 +23,22 @@ import java.util.HashMap;
         basePackages = {"com.oskarro.batcher.model.main", "com.oskarro.batcher.repository.main"},
         entityManagerFactoryRef = "mainEntityManager",
         transactionManagerRef = "mainTransactionManager")
-public class MainConfiguration {
+public class MainDatabaseConfiguration {
 
-    @Autowired
-    private Environment env;
+    private final Environment env;
+
+    public MainDatabaseConfiguration(Environment env) {
+        this.env = env;
+    }
 
     @Bean
     @Primary
     public DataSource mainDataSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl("jdbc:postgresql://0.0.0.0:5438/batch_db");
-        dataSource.setUsername("postgres");
-        dataSource.setPassword("postgres");
-
+        dataSource.setDriverClassName(Objects.requireNonNull(env.getProperty("datasource.driver-class-name")));
+        dataSource.setUrl(Objects.requireNonNull(env.getProperty("datasource.url")));
+        dataSource.setUsername(Objects.requireNonNull(env.getProperty("datasource.username")));
+        dataSource.setPassword(Objects.requireNonNull(env.getProperty("datasource.password")));
         return dataSource;
     }
 

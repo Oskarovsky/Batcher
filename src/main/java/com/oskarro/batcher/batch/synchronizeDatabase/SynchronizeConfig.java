@@ -1,9 +1,11 @@
 package com.oskarro.batcher.batch.synchronizeDatabase;
 
+import com.oskarro.batcher.batch.synchronizeDatabase.config.BackupDatabaseConfiguration;
+import com.oskarro.batcher.batch.synchronizeDatabase.config.MainDatabaseConfiguration;
 import com.oskarro.batcher.batch.synchronizeDatabase.service.BackupDatabaseService;
 import com.oskarro.batcher.batch.synchronizeDatabase.service.MainDatabaseService;
-import com.oskarro.batcher.repository.backup.SongRepository;
-import com.oskarro.batcher.repository.main.TrackRepository;
+import com.oskarro.batcher.environment.backup.repo.SongRepository;
+import com.oskarro.batcher.environment.main.repo.TrackRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -23,7 +25,7 @@ import java.util.concurrent.Callable;
 @EnableAutoConfiguration
 @EnableBatchProcessing
 @Configuration
-@Import({BackupConfiguration.class, MainConfiguration.class})
+@Import({BackupDatabaseConfiguration.class, MainDatabaseConfiguration.class})
 public class SynchronizeConfig {
 
     public final JobBuilderFactory jobBuilderFactory;
@@ -31,8 +33,8 @@ public class SynchronizeConfig {
 
     public final JdbcTemplate jdbcTemplate;
 
-    public final BackupConfiguration backupConfiguration;
-    public final MainConfiguration mainConfiguration;
+    public final BackupDatabaseConfiguration backupDatabaseConfiguration;
+    public final MainDatabaseConfiguration mainDatabaseConfiguration;
 
     public final TrackRepository trackRepository;
     public final SongRepository songRepository;
@@ -42,15 +44,15 @@ public class SynchronizeConfig {
     public SynchronizeConfig(JobBuilderFactory jobBuilderFactory,
                              StepBuilderFactory stepBuilderFactory,
                              JdbcTemplate jdbcTemplate,
-                             BackupConfiguration backupConfiguration,
-                             MainConfiguration mainConfiguration,
+                             BackupDatabaseConfiguration backupDatabaseConfiguration,
+                             MainDatabaseConfiguration mainDatabaseConfiguration,
                              TrackRepository trackRepository,
                              SongRepository songRepository) {
         this.jobBuilderFactory = jobBuilderFactory;
         this.stepBuilderFactory = stepBuilderFactory;
         this.jdbcTemplate = jdbcTemplate;
-        this.backupConfiguration = backupConfiguration;
-        this.mainConfiguration = mainConfiguration;
+        this.backupDatabaseConfiguration = backupDatabaseConfiguration;
+        this.mainDatabaseConfiguration = mainDatabaseConfiguration;
         this.trackRepository = trackRepository;
         this.songRepository = songRepository;
     }
@@ -78,7 +80,7 @@ public class SynchronizeConfig {
         return this.stepBuilderFactory
                 .get("methodInvokingMainStep")
                 .tasklet(methodInvokingTaskletAdapterForCountingMainRecords())
-                .transactionManager(mainConfiguration.mainTransactionManager())
+                .transactionManager(mainDatabaseConfiguration.mainTransactionManager())
                 .build();
     }
 
@@ -87,7 +89,7 @@ public class SynchronizeConfig {
         return this.stepBuilderFactory
                 .get("methodInvokingBackupStep")
                 .tasklet(methodInvokingTaskletAdapterForCountingBackupRecords())
-                .transactionManager(backupConfiguration.backupTransactionManager())
+                .transactionManager(backupDatabaseConfiguration.backupTransactionManager())
                 .build();
     }
 

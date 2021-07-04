@@ -1,6 +1,6 @@
 package com.oskarro.batcher.batch.csvToDatabase;
 
-import com.oskarro.batcher.model.main.Track;
+import com.oskarro.batcher.environment.main.model.Track;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.support.IteratorItemReader;
 

@@ -1,6 +1,6 @@
 package com.oskarro.batcher.batch.synchronizeDatabase.service;
 
-import com.oskarro.batcher.repository.main.TrackRepository;
+import com.oskarro.batcher.environment.main.repo.TrackRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 public class MainDatabaseService {

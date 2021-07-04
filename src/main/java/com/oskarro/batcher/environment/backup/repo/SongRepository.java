@@ -1,6 +1,6 @@
-package com.oskarro.batcher.repository.backup;
+package com.oskarro.batcher.environment.backup.repo;
 
-import com.oskarro.batcher.model.backup.Song;
+import com.oskarro.batcher.environment.backup.model.Song;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

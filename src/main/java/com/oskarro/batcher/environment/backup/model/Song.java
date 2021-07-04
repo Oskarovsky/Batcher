@@ -1,4 +1,4 @@
-package com.oskarro.batcher.model.main;
+package com.oskarro.batcher.environment.backup.model;
 
 import lombok.*;
 
@@ -7,11 +7,11 @@ import javax.persistence.*;
 @Getter
 @Setter
 @Entity
-@Table(name = "tracks")
+@Table(name = "songs")
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class Track {
+public class Song {
 
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
@@ -20,6 +20,4 @@ public class Track {
     private String artist;
     private String version;
     private String url;
-
-
 }
