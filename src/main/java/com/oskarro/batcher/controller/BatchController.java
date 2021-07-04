@@ -45,15 +45,9 @@ public class BatchController {
         Base64 base64 = new Base64();
         String decodedString = new String(base64.decode(content));
         System.out.println("==== Decoded content ====\n" + decodedString);
-        try {
-            JobParameters jobParameters = new JobParametersBuilder()
-                    .addDate("currentDate", new Date())
-                    .toJobParameters();
-            JobExecution jobExecution = jobLauncher.run(requestToDatabaseJob, jobParameters);
-        } catch (JobInstanceAlreadyCompleteException | JobExecutionAlreadyRunningException
-                | JobParametersInvalidException | JobRestartException e) {
-            e.printStackTrace();
-        }
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addDate("currentDate", new Date())
+                .toJobParameters();
         return "Request with batch has been sent";
     }
 

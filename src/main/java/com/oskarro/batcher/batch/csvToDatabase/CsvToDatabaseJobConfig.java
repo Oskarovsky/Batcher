@@ -1,6 +1,6 @@
 package com.oskarro.batcher.batch.csvToDatabase;
 
-import com.oskarro.batcher.config.BatchConfig;
+import com.oskarro.batcher.batch.synchronizeDatabase.MainConfiguration;
 import com.oskarro.batcher.config.DailyJobTimestamper;
 import com.oskarro.batcher.model.main.Track;
 import org.springframework.batch.core.Job;
@@ -19,8 +19,8 @@ import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -38,15 +38,17 @@ public class CsvToDatabaseJobConfig {
     public final JobBuilderFactory jobBuilderFactory;
     public final StepBuilderFactory stepBuilderFactory;
     public final DataSource dataSource;
+    public final MainConfiguration mainConfiguration;
     private final JdbcTemplate jdbcTemplate;
 
     public CsvToDatabaseJobConfig(JobBuilderFactory jobBuilderFactory,
                                   StepBuilderFactory stepBuilderFactory,
-                                  DataSource dataSource,
-                                  JdbcTemplate jdbcTemplate) {
+                                  @Qualifier("backupDataSource") DataSource dataSource,
+                                  MainConfiguration mainConfiguration, JdbcTemplate jdbcTemplate) {
         this.jobBuilderFactory = jobBuilderFactory;
         this.stepBuilderFactory = stepBuilderFactory;
         this.dataSource = dataSource;
+        this.mainConfiguration = mainConfiguration;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -113,7 +115,7 @@ public class CsvToDatabaseJobConfig {
         csvTrackWriter.setSql(
                 "INSERT INTO tracks (id, title, artist, version, url) " +
                         "VALUES (nextval('track_id_seq'), :title, :artist, :version, :url)");
-        csvTrackWriter.setDataSource(dataSource);
+        csvTrackWriter.setDataSource(mainConfiguration.mainDataSource());
         return csvTrackWriter;
     }
 }

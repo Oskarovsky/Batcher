@@ -33,14 +33,14 @@ public class BatchConfig {
     }
 
     @Bean
-    @Primary
-    @ConfigurationProperties("spring.datasource")
+//    @Primary
+//    @ConfigurationProperties("spring.datasource")
     public DataSourceProperties mainDataSourceProperties() {
         return new DataSourceProperties();
     }
 
-    @Bean(name = "mainDataSource")
-    @Primary
+    @Bean(name = "mainDataSource1")
+//    @Primary
     @ConfigurationProperties(prefix = "spring.datasource.configuration")
     public DataSource mainDataSource() {
         return mainDataSourceProperties().initializeDataSourceBuilder().type(DriverManagerDataSource.class).build();
@@ -48,13 +48,13 @@ public class BatchConfig {
 
 
     @Bean
-    @ConfigurationProperties("backup.datasource")
+    @ConfigurationProperties("spring.backup-datasource")
     public DataSourceProperties backupDataSourceProperties() {
         return new DataSourceProperties();
     }
 
-    @Bean(name = "backupDataSource")
-    @ConfigurationProperties(prefix = "backup.datasource.configuration")
+    @Bean(name = "backupDataSource1")
+    @ConfigurationProperties(prefix = "spring.backup-datasource.configuration")
     public DataSource backupDataSource() {
         return backupDataSourceProperties().initializeDataSourceBuilder().type(DriverManagerDataSource.class).build();
     }

@@ -12,6 +12,7 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,7 +30,7 @@ public class RequestToDatabaseJobConfig {
 
     public RequestToDatabaseJobConfig(JobBuilderFactory jobBuilderFactory,
                                       StepBuilderFactory stepBuilderFactory,
-                                      DataSource dataSource) {
+                                      @Qualifier("backupDataSource") DataSource dataSource) {
         this.jobBuilderFactory = jobBuilderFactory;
         this.stepBuilderFactory = stepBuilderFactory;
         this.dataSource = dataSource;

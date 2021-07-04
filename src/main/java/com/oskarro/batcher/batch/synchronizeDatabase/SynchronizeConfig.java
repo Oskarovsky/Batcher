@@ -1,5 +1,8 @@
 package com.oskarro.batcher.batch.synchronizeDatabase;
 
+import com.oskarro.batcher.batch.synchronizeDatabase.service.BackupDatabaseService;
+import com.oskarro.batcher.batch.synchronizeDatabase.service.MainDatabaseService;
+import com.oskarro.batcher.repository.backup.SongRepository;
 import com.oskarro.batcher.repository.main.TrackRepository;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -12,35 +15,44 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.oskarro.batcher.batch.synchronizeDatabase.service.DatabaseService;
-
-import javax.sql.DataSource;
 import java.util.concurrent.Callable;
 
 @EnableAutoConfiguration
 @EnableBatchProcessing
 @Configuration
+@Import({BackupConfiguration.class, MainConfiguration.class})
 public class SynchronizeConfig {
 
     public final JobBuilderFactory jobBuilderFactory;
     public final StepBuilderFactory stepBuilderFactory;
-    public final DataSource dataSource;
+
     public final JdbcTemplate jdbcTemplate;
 
+    public final BackupConfiguration backupConfiguration;
+    public final MainConfiguration mainConfiguration;
+
     public final TrackRepository trackRepository;
+    public final SongRepository songRepository;
+
+
 
     public SynchronizeConfig(JobBuilderFactory jobBuilderFactory,
                              StepBuilderFactory stepBuilderFactory,
-                             DataSource dataSource,
                              JdbcTemplate jdbcTemplate,
-                             TrackRepository trackRepository) {
+                             BackupConfiguration backupConfiguration,
+                             MainConfiguration mainConfiguration,
+                             TrackRepository trackRepository,
+                             SongRepository songRepository) {
         this.jobBuilderFactory = jobBuilderFactory;
         this.stepBuilderFactory = stepBuilderFactory;
-        this.dataSource = dataSource;
         this.jdbcTemplate = jdbcTemplate;
+        this.backupConfiguration = backupConfiguration;
+        this.mainConfiguration = mainConfiguration;
         this.trackRepository = trackRepository;
+        this.songRepository = songRepository;
     }
 
     @Bean
@@ -48,7 +60,8 @@ public class SynchronizeConfig {
         return this.jobBuilderFactory
                 .get("synchronizeDatabaseJob")
                 .start(printStep())
-                .next(methodInvokingStep())
+                .next(methodInvokingMainStep())
+                .next(methodInvokingBackupStep())
                 .build();
     }
 
@@ -61,18 +74,36 @@ public class SynchronizeConfig {
     }
 
     @Bean
-    public Step methodInvokingStep() {
+    public Step methodInvokingMainStep() {
         return this.stepBuilderFactory
-                .get("methodInvokingStep")
-                .tasklet(methodInvokingTaskletAdapter())
+                .get("methodInvokingMainStep")
+                .tasklet(methodInvokingTaskletAdapterForCountingMainRecords())
+                .transactionManager(mainConfiguration.mainTransactionManager())
                 .build();
     }
 
     @Bean
-    MethodInvokingTaskletAdapter methodInvokingTaskletAdapter() {
+    public Step methodInvokingBackupStep() {
+        return this.stepBuilderFactory
+                .get("methodInvokingBackupStep")
+                .tasklet(methodInvokingTaskletAdapterForCountingBackupRecords())
+                .transactionManager(backupConfiguration.backupTransactionManager())
+                .build();
+    }
+
+    @Bean
+    MethodInvokingTaskletAdapter methodInvokingTaskletAdapterForCountingMainRecords() {
         MethodInvokingTaskletAdapter methodInvokingTaskletAdapter = new MethodInvokingTaskletAdapter();
-        methodInvokingTaskletAdapter.setTargetObject(databaseService());
+        methodInvokingTaskletAdapter.setTargetObject(mainDatabaseService());
         methodInvokingTaskletAdapter.setTargetMethod("getNumberOfRecords");
+        return methodInvokingTaskletAdapter;
+    }
+
+    @Bean
+    MethodInvokingTaskletAdapter methodInvokingTaskletAdapterForCountingBackupRecords() {
+        MethodInvokingTaskletAdapter methodInvokingTaskletAdapter = new MethodInvokingTaskletAdapter();
+        methodInvokingTaskletAdapter.setTargetObject(backupDatabaseService());
+        methodInvokingTaskletAdapter.setTargetMethod("getNumberOfSongs");
         return methodInvokingTaskletAdapter;
     }
 
@@ -92,9 +123,15 @@ public class SynchronizeConfig {
     }
 
     @Bean
-    public DatabaseService databaseService() {
-        return new DatabaseService(trackRepository);
+    public MainDatabaseService mainDatabaseService() {
+        return new MainDatabaseService(trackRepository);
     }
+
+    @Bean
+    public BackupDatabaseService backupDatabaseService() {
+        return new BackupDatabaseService(songRepository);
+    }
+
 
 }
 
