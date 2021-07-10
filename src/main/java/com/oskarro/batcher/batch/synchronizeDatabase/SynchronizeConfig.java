@@ -25,6 +25,10 @@ import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
+import org.springframework.batch.item.support.SynchronizedItemStreamReader;
+import org.springframework.batch.item.support.SynchronizedItemStreamWriter;
+import org.springframework.batch.item.support.builder.SynchronizedItemStreamReaderBuilder;
+import org.springframework.batch.item.support.builder.SynchronizedItemStreamWriterBuilder;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -201,14 +205,19 @@ public class SynchronizeConfig {
     }
 
     @Bean
-    public JdbcCursorItemReader<Track> trackItemReader(){
+    public SynchronizedItemStreamReader<Track> trackItemReader() {
+        return new SynchronizedItemStreamReaderBuilder<Track>()
+                .delegate(trackItemReaderCursor())
+                .build();
+    }
+
+    @Bean
+    public JdbcCursorItemReader<Track> trackItemReaderCursor(){
         return new JdbcCursorItemReaderBuilder<Track>()
                 .dataSource(mainDatabaseConfiguration.mainDataSource())
                 .rowMapper(new TrackRowMapper())
                 .name("track-reader")
                 .fetchSize(200)
-//                .saveState(false)
-                .verifyCursorPosition(false)
                 .sql("SELECT id, title, artist, version, url, code FROM tracks")
                 .build();
     }
