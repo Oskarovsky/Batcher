@@ -15,7 +15,7 @@ public class BackupDatabaseService {
     }
 
     @Transactional(transactionManager = "backupTransactionManager")
-    public Long getNumberOfSongs() {
+    public Long getNumberOfSongsInBackup() {
         long counter = songRepository.count();
         System.out.println("[BACKUP] Currently number of items: " + counter);
         return counter;

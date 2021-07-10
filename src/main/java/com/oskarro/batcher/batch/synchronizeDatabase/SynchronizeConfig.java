@@ -1,6 +1,5 @@
 package com.oskarro.batcher.batch.synchronizeDatabase;
 
-import com.oskarro.batcher.batch.csvToDatabase.TrackProcessor;
 import com.oskarro.batcher.batch.synchronizeDatabase.config.BackupDatabaseConfiguration;
 import com.oskarro.batcher.batch.synchronizeDatabase.config.MainDatabaseConfiguration;
 import com.oskarro.batcher.batch.synchronizeDatabase.service.BackupDatabaseService;
@@ -16,6 +15,7 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.step.tasklet.CallableTaskletAdapter;
 import org.springframework.batch.core.step.tasklet.MethodInvokingTaskletAdapter;
+import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
@@ -28,7 +28,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 
 @EnableAutoConfiguration
@@ -70,16 +69,15 @@ public class SynchronizeConfig {
     public Job synchronizeDatabaseJob() {
         return this.jobBuilderFactory
                 .get("synchronizeDatabaseJob")
-//                .start(printStep())
-                .start(methodInvokingBackupStep())
-                .next(methodInvokingMainStep())
-//                .next(methodInvokingBackupStep())
+                .start(printStartNotificationStep())
+                .next(methodCheckingBackupDatabaseStep())
+                .next(methodCheckingMainDatabaseStep())
                 .next(databaseSynchronizationStep())
                 .build();
     }
 
     @Bean
-    public Step printStep() {
+    public Step printStartNotificationStep() {
         return this.stepBuilderFactory
                 .get("printStep")
                 .tasklet(tasklet())
@@ -88,22 +86,38 @@ public class SynchronizeConfig {
     }
 
     @Bean
-    public Step methodInvokingMainStep() {
+    public Step methodCheckingMainDatabaseStep() {
         return this.stepBuilderFactory
-                .get("methodInvokingMainStep")
+                .get("methodCheckingMainDatabaseStep")
                 .tasklet(methodInvokingTaskletAdapterForCountingMainRecords())
                 .transactionManager(mainDatabaseConfiguration.mainTransactionManager())
                 .build();
     }
 
     @Bean
-    public Step methodInvokingBackupStep() {
+    public Step methodCheckingBackupDatabaseStep() {
         return this.stepBuilderFactory
-                .get("methodInvokingBackupStep")
+                .get("methodCheckingBackupDatabaseStep")
                 .tasklet(methodInvokingTaskletAdapterForCountingBackupRecords())
                 .transactionManager(backupDatabaseConfiguration.backupTransactionManager())
                 .build();
     }
+
+    @Bean
+    public Step failureCheckingDatabaseStep() {
+        return this.stepBuilderFactory
+                .get("failureCheckingDatabaseStep")
+                .tasklet(failCheckingDatabaseTasklet())
+                .build();
+    }
+
+    @Bean
+    public Tasklet failCheckingDatabaseTasklet() {
+        return (contribution, context) -> {
+            System.out.println("Failure while checking database!");
+            return RepeatStatus.FINISHED;
+            };
+        }
 
     @Bean
     MethodInvokingTaskletAdapter methodInvokingTaskletAdapterForCountingMainRecords() {
@@ -117,7 +131,7 @@ public class SynchronizeConfig {
     MethodInvokingTaskletAdapter methodInvokingTaskletAdapterForCountingBackupRecords() {
         MethodInvokingTaskletAdapter methodInvokingTaskletAdapter = new MethodInvokingTaskletAdapter();
         methodInvokingTaskletAdapter.setTargetObject(backupDatabaseService());
-        methodInvokingTaskletAdapter.setTargetMethod("getNumberOfSongs");
+        methodInvokingTaskletAdapter.setTargetMethod("getNumberOfSongsInBackup");
         return methodInvokingTaskletAdapter;
     }
 
@@ -131,9 +145,7 @@ public class SynchronizeConfig {
     @Bean
     public Callable<RepeatStatus> callableObject() {
         return () -> {
-            List<Track> tracks = mainDatabaseService().processTracks();
-            tracks.forEach(t -> backupDatabaseService().validateSong(t.getCode()));
-            System.out.println("This was executed in another thread");
+            System.out.println("STARTING BATCH PROCESS FOR DATABASE SYNCHRONIZATION");
             return RepeatStatus.FINISHED;
         };
     }
