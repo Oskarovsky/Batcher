@@ -22,9 +22,13 @@ public class DatabaseProcessor implements ItemProcessor<Track, Track> {
 
     @Override
     public Track process(final Track track) throws Exception {
-        if (backupDatabaseService.validateSong(track.getCode()).equals("INSERT")) {
+        String code = backupDatabaseService.validateSong(track.getCode());
+        if (code.equals("INSERT")) {
             System.out.println("[BACKUP] CREATING TRACK WITH CODE " + track.getCode());
             return track;
+        } else if (code.equals("UPDATE")) {
+            System.out.println("[BACKUP] TRACK WITH CODE " + track.getCode() + " ALREADY EXISTS");
+            return null;
         } else {
             return null;
         }

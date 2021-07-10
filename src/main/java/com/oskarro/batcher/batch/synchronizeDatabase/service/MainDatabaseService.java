@@ -23,6 +23,9 @@ public class MainDatabaseService {
     public Long getNumberOfRecords() {
         long counter = trackRepository.count();
         System.out.println("[PROD] Currently number of items: " + counter);
+        if (counter == 0) {
+            throw new RuntimeException("There are no items in main database");
+        }
         return counter;
     }
 

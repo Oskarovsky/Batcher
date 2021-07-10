@@ -13,6 +13,8 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.builder.FlowBuilder;
+import org.springframework.batch.core.job.flow.Flow;
 import org.springframework.batch.core.step.tasklet.CallableTaskletAdapter;
 import org.springframework.batch.core.step.tasklet.MethodInvokingTaskletAdapter;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -66,16 +68,31 @@ public class SynchronizeConfig {
     }
 
     @Bean
+    public MainDatabaseService mainDatabaseService() {
+        return new MainDatabaseService(trackRepository);
+    }
+
+    @Bean
+    public BackupDatabaseService backupDatabaseService() {
+        return new BackupDatabaseService(songRepository);
+    }
+
+    @Bean
     public Job synchronizeDatabaseJob() {
         return this.jobBuilderFactory
                 .get("synchronizeDatabaseJob")
                 .start(printStartNotificationStep())
-                .next(methodCheckingBackupDatabaseStep())
                 .next(methodCheckingMainDatabaseStep())
+                .on("FAILED").to(failureCheckingDatabaseStep())
+                .from(methodCheckingMainDatabaseStep()).on("*").to(methodCheckingBackupDatabaseStep())
+//                .next(methodCheckingBackupDatabaseStep())
                 .next(databaseSynchronizationStep())
+                .next(resultProcessingFlow())
+                .end()
                 .build();
     }
 
+    // region START PROCESS
     @Bean
     public Step printStartNotificationStep() {
         return this.stepBuilderFactory
@@ -83,56 +100,6 @@ public class SynchronizeConfig {
                 .tasklet(tasklet())
                 .transactionManager(mainDatabaseConfiguration.mainTransactionManager())
                 .build();
-    }
-
-    @Bean
-    public Step methodCheckingMainDatabaseStep() {
-        return this.stepBuilderFactory
-                .get("methodCheckingMainDatabaseStep")
-                .tasklet(methodInvokingTaskletAdapterForCountingMainRecords())
-                .transactionManager(mainDatabaseConfiguration.mainTransactionManager())
-                .build();
-    }
-
-    @Bean
-    public Step methodCheckingBackupDatabaseStep() {
-        return this.stepBuilderFactory
-                .get("methodCheckingBackupDatabaseStep")
-                .tasklet(methodInvokingTaskletAdapterForCountingBackupRecords())
-                .transactionManager(backupDatabaseConfiguration.backupTransactionManager())
-                .build();
-    }
-
-    @Bean
-    public Step failureCheckingDatabaseStep() {
-        return this.stepBuilderFactory
-                .get("failureCheckingDatabaseStep")
-                .tasklet(failCheckingDatabaseTasklet())
-                .build();
-    }
-
-    @Bean
-    public Tasklet failCheckingDatabaseTasklet() {
-        return (contribution, context) -> {
-            System.out.println("Failure while checking database!");
-            return RepeatStatus.FINISHED;
-            };
-        }
-
-    @Bean
-    MethodInvokingTaskletAdapter methodInvokingTaskletAdapterForCountingMainRecords() {
-        MethodInvokingTaskletAdapter methodInvokingTaskletAdapter = new MethodInvokingTaskletAdapter();
-        methodInvokingTaskletAdapter.setTargetObject(mainDatabaseService());
-        methodInvokingTaskletAdapter.setTargetMethod("getNumberOfRecords");
-        return methodInvokingTaskletAdapter;
-    }
-
-    @Bean
-    MethodInvokingTaskletAdapter methodInvokingTaskletAdapterForCountingBackupRecords() {
-        MethodInvokingTaskletAdapter methodInvokingTaskletAdapter = new MethodInvokingTaskletAdapter();
-        methodInvokingTaskletAdapter.setTargetObject(backupDatabaseService());
-        methodInvokingTaskletAdapter.setTargetMethod("getNumberOfSongsInBackup");
-        return methodInvokingTaskletAdapter;
     }
 
     @Bean
@@ -149,23 +116,71 @@ public class SynchronizeConfig {
             return RepeatStatus.FINISHED;
         };
     }
+    // endregion
 
+    // region MAIN DATABASE (POSTGRES)
     @Bean
-    public MainDatabaseService mainDatabaseService() {
-        return new MainDatabaseService(trackRepository);
+    public Step methodCheckingMainDatabaseStep() {
+        return this.stepBuilderFactory
+                .get("methodCheckingMainDatabaseStep")
+                .tasklet(methodInvokingTaskletAdapterForCountingMainRecords())
+                .transactionManager(mainDatabaseConfiguration.mainTransactionManager())
+                .build();
     }
 
     @Bean
-    public BackupDatabaseService backupDatabaseService() {
-        return new BackupDatabaseService(songRepository);
+    MethodInvokingTaskletAdapter methodInvokingTaskletAdapterForCountingMainRecords() {
+        MethodInvokingTaskletAdapter methodInvokingTaskletAdapter = new MethodInvokingTaskletAdapter();
+        methodInvokingTaskletAdapter.setTargetObject(mainDatabaseService());
+        methodInvokingTaskletAdapter.setTargetMethod("getNumberOfRecords");
+        return methodInvokingTaskletAdapter;
+    }
+    // endregion
+
+
+    // region BACKUP DATABASE (POSTGRES)
+    @Bean
+    public Step methodCheckingBackupDatabaseStep() {
+        return this.stepBuilderFactory
+                .get("methodCheckingBackupDatabaseStep")
+                .tasklet(methodInvokingTaskletAdapterForCountingBackupRecords())
+                .transactionManager(backupDatabaseConfiguration.backupTransactionManager())
+                .build();
     }
 
+    @Bean
+    MethodInvokingTaskletAdapter methodInvokingTaskletAdapterForCountingBackupRecords() {
+        MethodInvokingTaskletAdapter methodInvokingTaskletAdapter = new MethodInvokingTaskletAdapter();
+        methodInvokingTaskletAdapter.setTargetObject(backupDatabaseService());
+        methodInvokingTaskletAdapter.setTargetMethod("getNumberOfSongsInBackup");
+        return methodInvokingTaskletAdapter;
+    }
+    // endregion
 
+    // region COMMONS
+    @Bean
+    public Step failureCheckingDatabaseStep() {
+        return this.stepBuilderFactory
+                .get("failureCheckingDatabaseStep")
+                .tasklet(failCheckingDatabaseTasklet())
+                .build();
+    }
+
+    @Bean
+    public Tasklet failCheckingDatabaseTasklet() {
+        return (contribution, context) -> {
+            System.out.println("Failure while checking database!");
+            return RepeatStatus.FINISHED;
+        };
+    }
+    // endregion
+
+    // region DATABASE SYNCHRONIZATION
     @Bean
     public Step databaseSynchronizationStep() {
         return stepBuilderFactory
                 .get("databaseSynchronizationStep")
-                .<Track, Track>chunk(10)
+                .<Track, Track>chunk(1000)
                 .reader(trackItemReader())
                 .processor(trackProcessor())
                 .writer(trackItemWriter())
@@ -198,8 +213,26 @@ public class SynchronizeConfig {
         itemWriter.afterPropertiesSet();
         return itemWriter;
     }
+    // endregion
 
+    // region PROCESS RESULTS
+    @Bean
+    public Step methodCheckingFinalResultsStep() {
+        return this.stepBuilderFactory
+                .get("methodCheckingFinalResultsStep")
+                .tasklet(methodInvokingTaskletAdapterForCountingMainRecords())
+                .transactionManager(mainDatabaseConfiguration.mainTransactionManager())
+                .build();
+    }
 
+    @Bean
+    public Flow resultProcessingFlow() {
+        return new FlowBuilder<Flow>("resultProcessingFlow")
+                .start(methodCheckingMainDatabaseStep())
+                .next(methodCheckingBackupDatabaseStep())
+                .build();
+    }
+    // endregion
 
 }
 
