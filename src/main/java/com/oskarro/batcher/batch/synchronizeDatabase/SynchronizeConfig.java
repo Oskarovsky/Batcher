@@ -23,11 +23,17 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
+import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
+import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.core.task.SyncTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.concurrent.Callable;
@@ -159,6 +165,11 @@ public class SynchronizeConfig {
 
     // region COMMONS
     @Bean
+    public TaskExecutor taskExecutor() {
+        return new SimpleAsyncTaskExecutor("async");
+    }
+
+    @Bean
     public Step failureCheckingDatabaseStep() {
         return this.stepBuilderFactory
                 .get("failureCheckingDatabaseStep")
@@ -180,21 +191,26 @@ public class SynchronizeConfig {
     public Step databaseSynchronizationStep() {
         return stepBuilderFactory
                 .get("databaseSynchronizationStep")
-                .<Track, Track>chunk(1000)
+                .<Track, Track>chunk(20)
                 .reader(trackItemReader())
                 .processor(trackProcessor())
                 .writer(trackItemWriter())
+                .taskExecutor(taskExecutor())
+                .throttleLimit(20)
                 .build();
     }
 
     @Bean
     public JdbcCursorItemReader<Track> trackItemReader(){
-        JdbcCursorItemReader<Track> reader = new JdbcCursorItemReader<>();
-        reader.setSql("SELECT id, title, artist, version, url, code FROM tracks");
-        reader.setDataSource(mainDatabaseConfiguration.mainDataSource());
-        reader.setFetchSize(100);
-        reader.setRowMapper(new TrackRowMapper());
-        return reader;
+        return new JdbcCursorItemReaderBuilder<Track>()
+                .dataSource(mainDatabaseConfiguration.mainDataSource())
+                .rowMapper(new TrackRowMapper())
+                .name("track-reader")
+                .fetchSize(200)
+//                .saveState(false)
+                .verifyCursorPosition(false)
+                .sql("SELECT id, title, artist, version, url, code FROM tracks")
+                .build();
     }
 
     @Bean
@@ -204,14 +220,12 @@ public class SynchronizeConfig {
 
     @Bean
     public ItemWriter<Track> trackItemWriter(){
-        JdbcBatchItemWriter<Track> itemWriter = new JdbcBatchItemWriter<>();
-        itemWriter.setDataSource(backupDatabaseConfiguration.backupDataSource());
-        itemWriter.setSql(
-                "INSERT INTO songs (id, title, artist, version, url, code) " +
-                        "VALUES (nextval('song_id_seq'), :title, :artist, :version, :url, :code)");
-        itemWriter.setItemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>());
-        itemWriter.afterPropertiesSet();
-        return itemWriter;
+        return new JdbcBatchItemWriterBuilder<Track>()
+                .dataSource(backupDatabaseConfiguration.backupDataSource())
+                .sql("INSERT INTO songs (id, title, artist, version, url, code) " +
+                        "VALUES (nextval('song_id_seq'), :title, :artist, :version, :url, :code)")
+                .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
+                .build();
     }
     // endregion
 
