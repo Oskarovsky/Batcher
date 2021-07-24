@@ -6,21 +6,18 @@ import org.springframework.batch.item.ItemProcessor;
 
 import java.util.List;
 
-public class ComputerOrderProcessor implements ItemProcessor<Computer, Computer> {
+public class ComputerApplierProcessor implements ItemProcessor<Computer, Computer> {
 
-    private ComputerDao computerDao;
+    private final ComputerDao computerDao;
 
-    public ComputerOrderProcessor(ComputerDao computerDao) {
+    public ComputerApplierProcessor(ComputerDao computerDao) {
         this.computerDao = computerDao;
     }
 
     @Override
     public Computer process(Computer computer) throws Exception {
-        List<Computer> computerList = computerDao.getComputersByModel(computer.getModel());
-
-        for (Computer comp : computerList) {
-            computer.setProductStatus("IN-PROGRESS");
-        }
+        computer.setProductStatus("IN-PROGRESS");
+        Computer comp = computerDao.getComputerById(computer.getComputerId());
         return computer;
     }
 }

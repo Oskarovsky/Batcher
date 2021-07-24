@@ -38,21 +38,21 @@ public class BatchController {
     @Qualifier("synchronizeDatabaseJob")
     Job synchronizeDatabaseJob;
 
-    @Qualifier("updateComputersJob")
-    Job updateComputersJob;
+    @Qualifier("computerUpdateJob")
+    Job computerUpdateJob;
 
     public BatchController(JobLauncher jobLauncher,
                            JobExplorer jobExplorer,
                            Job csvToDatabaseJob,
                            Job requestToDatabaseJob,
                            Job synchronizeDatabaseJob,
-                           Job updateComputersJob) {
+                           Job computerUpdateJob) {
         this.jobLauncher = jobLauncher;
         this.jobExplorer = jobExplorer;
         this.csvToDatabaseJob = csvToDatabaseJob;
         this.requestToDatabaseJob = requestToDatabaseJob;
         this.synchronizeDatabaseJob = synchronizeDatabaseJob;
-        this.updateComputersJob = updateComputersJob;
+        this.computerUpdateJob = computerUpdateJob;
     }
 
     @RequestMapping(value = "/batch", method = RequestMethod.POST)
@@ -112,10 +112,10 @@ public class BatchController {
         String decodedString = new String(base64.decode(content));
         System.out.println("==== Decoded content with Computers ====\n" + decodedString);
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("fileContent", content)
+                .addString("fileContent", decodedString)
+                .addDate("date", new Date())
                 .toJobParameters();
-        JobExecution jobExecution = jobLauncher.run(updateComputersJob, jobParameters);
-
+        JobExecution jobExecution = jobLauncher.run(computerUpdateJob, jobParameters);
         return "Request with batch has been sent";
     }
 }

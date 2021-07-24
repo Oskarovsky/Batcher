@@ -7,6 +7,9 @@ import org.springframework.batch.core.annotation.AfterStep;
 import org.springframework.batch.item.*;
 import org.springframework.batch.item.file.transform.FieldSet;
 
+import java.util.concurrent.ThreadLocalRandom;
+
+
 public class ComputerCsvReader implements ItemStreamReader<Computer> {
 
     private ItemStreamReader<FieldSet> fieldSetReader;
@@ -18,7 +21,7 @@ public class ComputerCsvReader implements ItemStreamReader<Computer> {
     }
 
     @Override
-    public Computer read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+    public Computer read() throws Exception {
         return process(fieldSetReader.read());
     }
 
@@ -27,12 +30,17 @@ public class ComputerCsvReader implements ItemStreamReader<Computer> {
         if (fieldSet != null) {
             if (fieldSet.getFieldCount() > 1) {
                 result = new Computer();
-                result.setName(fieldSet.readString(0));
-                result.setDescription(fieldSet.readString(1));
-                result.setModel(fieldSet.readString(2));
-                result.setPrice(fieldSet.readBigDecimal(3));
-                result.setProductStatus(fieldSet.readString(4));
-                result.setOrderDate(fieldSet.readDate(5));
+                if (fieldSet.readString(0).equals("null")) {
+                    result.setComputerId(ThreadLocalRandom.current().nextInt(1,1000000000));
+                } else {
+                    result.setComputerId(fieldSet.readInt(0));
+                }
+                result.setName(fieldSet.readString(1));
+                result.setDescription(fieldSet.readString(2));
+                result.setModel(fieldSet.readString(3));
+                result.setPrice(fieldSet.readBigDecimal(4));
+                result.setProductStatus(fieldSet.readString(5));
+                result.setOrderDate(fieldSet.readDate(6));
                 recordCount++;
             } else {
                 expectedRecordCount = fieldSet.readInt(0);

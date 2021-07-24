@@ -7,4 +7,6 @@ import java.util.List;
 public interface ComputerDao {
 
     List<Computer> getComputersByModel(String model);
+
+    Computer getComputerById(Integer id);
 }

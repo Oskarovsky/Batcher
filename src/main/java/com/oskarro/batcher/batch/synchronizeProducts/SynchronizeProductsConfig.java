@@ -31,9 +31,13 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 @EnableAutoConfiguration
 @EnableBatchProcessing
@@ -106,17 +110,18 @@ public class SynchronizeProductsConfig {
     // endregion
 
     @Bean
-    public Job updateComputersJob() {
+    public Job computerUpdateJob() {
         return this.jobBuilderFactory
-                .get("updateComputersJob")
-                .start(updateComputersStep())
+                .get("computerUpdateJob")
+                .incrementer(new RunIdIncrementer())
+                .start(computerUpdateStep())
                 .build();
     }
 
     @Bean
-    public Step updateComputersStep() {
+    public Step computerUpdateStep() {
         return this.stepBuilderFactory
-                .get("updateComputersStep")
+                .get("computerUpdateStep")
                 .<Computer, Computer>chunk(100)
                 .reader(computerCsvReader())
                 .writer(computerUpdateWriter(mainDatabaseConfiguration.mainDataSource()))
@@ -128,12 +133,14 @@ public class SynchronizeProductsConfig {
     @Bean
     @StepScope
     public ComputerCsvReader computerCsvReader() {
-        return new ComputerCsvReader(fileComputerReader(null));
+        return new ComputerCsvReader(computerUpdateReader(null));
     }
 
-    private FlatFileItemReader<FieldSet> fileComputerReader(@Value("#{jobParameters['fileContent']}") String fileContent) {
+    @Bean
+    @StepScope
+    public FlatFileItemReader<FieldSet> computerUpdateReader(@Value("#{jobParameters['fileContent']}") String fileContent) {
         return new FlatFileItemReaderBuilder<FieldSet>()
-                .name("fileComputerReader")
+                .name("computerUpdateReader")
                 .resource(new ByteArrayResource(fileContent.getBytes()))
                 .lineTokenizer(new DelimitedLineTokenizer())
                 .fieldSetMapper(new PassThroughFieldSetMapper())
@@ -142,10 +149,19 @@ public class SynchronizeProductsConfig {
 
     @Bean
     public JdbcBatchItemWriter<Computer> computerUpdateWriter(DataSource dataSource) {
-        return new JdbcBatchItemWriterBuilder<Computer>()
-                .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
-                .sql("UPDATE computer SET product_status = :productStatus WHERE model = :model")
-                .dataSource(dataSource)
-                .build();
+        File resource = null;
+        try {
+            resource = new ClassPathResource("products/upsert_computer.sql").getFile();
+            String sql = new String(Files.readAllBytes(resource.toPath()));
+            return new JdbcBatchItemWriterBuilder<Computer>()
+                    .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
+                    .sql(sql)
+                    .dataSource(dataSource)
+                    .build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error caused by computerUpdateWriter (problem with reading files)");
+            return null;
+        }
     }
 }
