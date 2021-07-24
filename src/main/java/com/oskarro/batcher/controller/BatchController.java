@@ -38,16 +38,21 @@ public class BatchController {
     @Qualifier("synchronizeDatabaseJob")
     Job synchronizeDatabaseJob;
 
+    @Qualifier("updateComputersJob")
+    Job updateComputersJob;
+
     public BatchController(JobLauncher jobLauncher,
                            JobExplorer jobExplorer,
                            Job csvToDatabaseJob,
                            Job requestToDatabaseJob,
-                           Job synchronizeDatabaseJob) {
+                           Job synchronizeDatabaseJob,
+                           Job updateComputersJob) {
         this.jobLauncher = jobLauncher;
         this.jobExplorer = jobExplorer;
         this.csvToDatabaseJob = csvToDatabaseJob;
         this.requestToDatabaseJob = requestToDatabaseJob;
         this.synchronizeDatabaseJob = synchronizeDatabaseJob;
+        this.updateComputersJob = updateComputersJob;
     }
 
     @RequestMapping(value = "/batch", method = RequestMethod.POST)
@@ -97,5 +102,20 @@ public class BatchController {
                 .getNextJobParameters(synchronizeProductsJob)
                 .toJobParameters();
         return this.jobLauncher.run(synchronizeProductsJob, jobParameters).getExitStatus();
+    }
+
+    @RequestMapping(value = "/computers/update", method = RequestMethod.POST)
+    @ResponseBody
+    public String updateComputersFromRequestBodyInDatabase(@RequestBody String content) throws Exception {
+        System.out.println("==== Encoded content with Computers ====\n" + content);
+        Base64 base64 = new Base64();
+        String decodedString = new String(base64.decode(content));
+        System.out.println("==== Decoded content with Computers ====\n" + decodedString);
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("fileContent", content)
+                .toJobParameters();
+        JobExecution jobExecution = jobLauncher.run(updateComputersJob, jobParameters);
+
+        return "Request with batch has been sent";
     }
 }
