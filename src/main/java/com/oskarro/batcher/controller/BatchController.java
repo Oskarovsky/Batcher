@@ -4,11 +4,14 @@ import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.*;
+import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.repository.JobExecutionAlreadyRunningException;
 import org.springframework.batch.core.repository.JobInstanceAlreadyCompleteException;
 import org.springframework.batch.core.repository.JobRestartException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -21,6 +24,11 @@ public class BatchController {
 
     JobLauncher jobLauncher;
 
+    JobExplorer jobExplorer;
+
+    @Autowired
+    ApplicationContext context;
+
     @Qualifier("csvToDatabaseJob")
     Job csvToDatabaseJob;
 
@@ -30,9 +38,13 @@ public class BatchController {
     @Qualifier("synchronizeDatabaseJob")
     Job synchronizeDatabaseJob;
 
-    public BatchController(JobLauncher jobLauncher, Job csvToDatabaseJob, Job requestToDatabaseJob,
+    public BatchController(JobLauncher jobLauncher,
+                           JobExplorer jobExplorer,
+                           Job csvToDatabaseJob,
+                           Job requestToDatabaseJob,
                            Job synchronizeDatabaseJob) {
         this.jobLauncher = jobLauncher;
+        this.jobExplorer = jobExplorer;
         this.csvToDatabaseJob = csvToDatabaseJob;
         this.requestToDatabaseJob = requestToDatabaseJob;
         this.synchronizeDatabaseJob = synchronizeDatabaseJob;
@@ -76,5 +88,14 @@ public class BatchController {
                 JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
             e.printStackTrace();
         }
+    }
+
+    @RequestMapping(value = "/job/synchronize/products", method = RequestMethod.GET)
+    public ExitStatus synchronizeProducts() throws Exception {
+        Job synchronizeProductsJob = this.context.getBean("synchronizeProductsJob", Job.class);
+        JobParameters jobParameters = new JobParametersBuilder(this.jobExplorer)
+                .getNextJobParameters(synchronizeProductsJob)
+                .toJobParameters();
+        return this.jobLauncher.run(synchronizeProductsJob, jobParameters).getExitStatus();
     }
 }

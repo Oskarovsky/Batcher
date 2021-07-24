@@ -1,6 +1,7 @@
 package com.oskarro.batcher.batch.synchronizeDatabase.service;
 
 import com.oskarro.batcher.environment.backup.model.Song;
+import com.oskarro.batcher.environment.backup.repo.ProductRepository;
 import com.oskarro.batcher.environment.backup.repo.SongRepository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,9 +10,14 @@ import java.util.List;
 public class BackupDatabaseService {
 
     SongRepository songRepository;
+    ProductRepository productRepository;
 
     public BackupDatabaseService(SongRepository songRepository) {
         this.songRepository = songRepository;
+    }
+
+    public BackupDatabaseService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
     }
 
     @Transactional(transactionManager = "backupTransactionManager")

@@ -1,10 +1,12 @@
 package com.oskarro.batcher.batch.synchronizeDatabase.service;
 
 import com.oskarro.batcher.environment.main.model.Track;
+import com.oskarro.batcher.environment.main.repo.ComputerRepository;
+import com.oskarro.batcher.environment.main.repo.ConsoleRepository;
+import com.oskarro.batcher.environment.main.repo.SmartphoneRepository;
 import com.oskarro.batcher.environment.main.repo.TrackRepository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -14,9 +16,25 @@ public class MainDatabaseService {
     private static final int FETCH_SIZE = 10000;
 
     private final TrackRepository trackRepository;
+    private final ComputerRepository computerRepository;
+    private final ConsoleRepository consoleRepository;
+    private final SmartphoneRepository smartphoneRepository;
 
-    public MainDatabaseService(TrackRepository trackRepository) {
+    public MainDatabaseService(final TrackRepository trackRepository) {
         this.trackRepository = trackRepository;
+        this.computerRepository = null;
+        this.smartphoneRepository = null;
+        this.consoleRepository = null;
+    }
+
+    public MainDatabaseService(final ComputerRepository computerRepository,
+                               final ConsoleRepository consoleRepository,
+                               final SmartphoneRepository smartphoneRepository) {
+        this.computerRepository = computerRepository;
+        this.consoleRepository = consoleRepository;
+        this.smartphoneRepository = smartphoneRepository;
+        this.trackRepository = null;
+
     }
 
     @Transactional(transactionManager = "mainTransactionManager")
