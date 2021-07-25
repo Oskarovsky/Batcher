@@ -47,5 +47,9 @@ public class Computer {
     @Column(name = "modify_date")
     private Date modifyDate;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department department;
+
 
 }

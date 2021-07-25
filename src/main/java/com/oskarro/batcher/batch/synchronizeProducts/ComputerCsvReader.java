@@ -1,6 +1,7 @@
 package com.oskarro.batcher.batch.synchronizeProducts;
 
 import com.oskarro.batcher.environment.main.model.cargo.Computer;
+import com.oskarro.batcher.environment.main.model.cargo.Department;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.AfterStep;
@@ -41,6 +42,9 @@ public class ComputerCsvReader implements ItemStreamReader<Computer> {
                 result.setPrice(fieldSet.readBigDecimal(4));
                 result.setProductStatus(fieldSet.readString(5));
                 result.setOrderDate(fieldSet.readDate(6));
+                Department department = new Department();
+                department.setDepartmentId(fieldSet.readInt(7));
+                result.setDepartment(department);
                 recordCount++;
             } else {
                 expectedRecordCount = fieldSet.readInt(0);

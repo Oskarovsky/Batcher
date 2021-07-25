@@ -38,6 +38,7 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.sql.Date;
 
 @EnableAutoConfiguration
 @EnableBatchProcessing
@@ -109,6 +110,7 @@ public class SynchronizeProductsConfig {
     }
     // endregion
 
+    // region COMPUTER ITEM
     @Bean
     public Job computerUpdateJob() {
         return this.jobBuilderFactory
