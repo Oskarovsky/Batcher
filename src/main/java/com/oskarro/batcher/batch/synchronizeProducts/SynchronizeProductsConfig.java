@@ -101,7 +101,8 @@ public class SynchronizeProductsConfig {
         return this.jobBuilderFactory
                 .get("synchronizeProductsJob")
                 .listener(JobListenerFactoryBean.getListener(
-                        new JobCompletionNotificationListener(jdbcTemplate, "Job synchronization products in database")
+                        new JobCompletionNotificationListener(
+                                jdbcTemplate, "Job synchronization products in database")
                 ))
                 .incrementer(new RunIdIncrementer())
                 .start(printInformationBeforeStep())

@@ -22,7 +22,7 @@ public class QuartzConfiguration {
         SimpleScheduleBuilder scheduleBuilder = SimpleScheduleBuilder
                 .simpleSchedule()
                 .withIntervalInSeconds(5)
-                .withRepeatCount(4);
+                .withRepeatCount(2);
 
         return TriggerBuilder.newTrigger()
                 .forJob(quartzJobDetail())

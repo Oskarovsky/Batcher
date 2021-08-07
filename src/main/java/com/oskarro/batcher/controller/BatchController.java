@@ -41,21 +41,31 @@ public class BatchController {
     @Qualifier("computerUpdateJob")
     Job computerUpdateJob;
 
+    @Qualifier("encodedCsvToDatabaseJob")
+    Job encodedCsvToDatabaseJob;
+
     public BatchController(JobLauncher jobLauncher,
                            JobExplorer jobExplorer,
                            Job csvToDatabaseJob,
                            Job requestToDatabaseJob,
                            Job synchronizeDatabaseJob,
-                           Job computerUpdateJob) {
+                           Job computerUpdateJob,
+                           Job encodedCsvToDatabaseJob) {
         this.jobLauncher = jobLauncher;
         this.jobExplorer = jobExplorer;
         this.csvToDatabaseJob = csvToDatabaseJob;
         this.requestToDatabaseJob = requestToDatabaseJob;
         this.synchronizeDatabaseJob = synchronizeDatabaseJob;
         this.computerUpdateJob = computerUpdateJob;
+        this.encodedCsvToDatabaseJob = encodedCsvToDatabaseJob;
     }
 
-    /* Function gets data from request body CSV file (encoded in Base65 format), decodes it and print all data in console */
+    /** Next steps of saveTracksFromRequestBodyToDatabase function:
+     * 1. get encoded data from request body,
+     * 2. decode data from Base64 to CSV format,
+     * 3. display CSV content file in console,
+     * 4. save records from CSV file to database
+     */
     @RequestMapping(value = "/batch", method = RequestMethod.POST)
     @ResponseBody
     public String saveTracksFromRequestBodyToDatabase(@RequestBody String content) {
@@ -63,13 +73,24 @@ public class BatchController {
         Base64 base64 = new Base64();
         String decodedString = new String(base64.decode(content));
         System.out.println("==== Decoded content ====\n" + decodedString);
-        JobParameters jobParameters = new JobParametersBuilder()
-                .addDate("currentDate", new Date())
-                .toJobParameters();
+        try {
+            JobParameters jobParameters = new JobParametersBuilder()
+                    .addString("decodedContent", decodedString)
+                    .addDate("currentDate", new Date())
+                    .toJobParameters();
+            JobExecution jobExecution = jobLauncher.run(encodedCsvToDatabaseJob, jobParameters);
+        } catch (JobExecutionAlreadyRunningException | JobRestartException
+                | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
+            e.printStackTrace();
+        }
         return "Request with batch has been sent";
     }
 
-    /* Function gets filename from url, fetches file content and saves records in main database */
+    /** Next steps of saveTracksFromCsvToDatabase function:
+     * 1. get filename from url,
+     * 2. fetch CSV file content from resources directory,
+     * 3. save records from CSV file to database
+     */
     @RequestMapping(value = "/job/file/{fileName}", method = RequestMethod.GET)
     public void saveTracksFromCsvToDatabase(@PathVariable String fileName) {
         try {
@@ -77,20 +98,25 @@ public class BatchController {
                     .addLong("uniqueName", System.nanoTime())
                     .addString("fileName", fileName + ".csv")
                     .toJobParameters();
-            JobExecution jobExecution = jobLauncher.run(csvToDatabaseJob, jobParameters);
+            jobLauncher.run(csvToDatabaseJob, jobParameters);
         } catch (JobExecutionAlreadyRunningException | JobRestartException
                 | JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
             e.printStackTrace();
         }
     }
 
+    /** Next steps of synchronizeDatabase function:
+     * 1. check main database,
+     * 2. check backup database,
+     * 3. save elements from main database to back up database
+     */
     @RequestMapping(value = "/job/synchronize", method = RequestMethod.GET)
     public void synchronizeDatabase() {
         try {
             JobParameters jobParameters = new JobParametersBuilder()
                     .addLong("uniqueName", System.nanoTime())
                     .toJobParameters();
-            JobExecution jobExecution = jobLauncher.run(synchronizeDatabaseJob, jobParameters);
+            jobLauncher.run(synchronizeDatabaseJob, jobParameters);
         } catch (JobExecutionAlreadyRunningException | JobRestartException |
                 JobInstanceAlreadyCompleteException | JobParametersInvalidException e) {
             e.printStackTrace();
@@ -117,7 +143,7 @@ public class BatchController {
                 .addString("fileContent", decodedString)
                 .addDate("date", new Date())
                 .toJobParameters();
-        JobExecution jobExecution = jobLauncher.run(computerUpdateJob, jobParameters);
+        jobLauncher.run(computerUpdateJob, jobParameters);
         return "Request with batch has been sent";
     }
 }
