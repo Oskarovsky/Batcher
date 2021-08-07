@@ -5,7 +5,10 @@ import com.oskarro.batcher.batch.synchronizeDatabase.config.MainDatabaseConfigur
 import com.oskarro.batcher.batch.synchronizeDatabase.service.BackupDatabaseService;
 import com.oskarro.batcher.batch.synchronizeDatabase.service.MainDatabaseService;
 import com.oskarro.batcher.environment.backup.repo.ProductRepository;
+import com.oskarro.batcher.environment.main.dao.ComputerDao;
+import com.oskarro.batcher.environment.main.dao.ComputerDaoSupport;
 import com.oskarro.batcher.environment.main.model.cargo.Computer;
+import com.oskarro.batcher.environment.main.model.cargo.Department;
 import com.oskarro.batcher.environment.main.repo.ComputerRepository;
 import com.oskarro.batcher.environment.main.repo.ConsoleRepository;
 import com.oskarro.batcher.environment.main.repo.SmartphoneRepository;
@@ -19,7 +22,9 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.ItemStreamReader;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
+import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
+import org.springframework.batch.item.database.builder.JdbcCursorItemReaderBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.PassThroughFieldSetMapper;
@@ -117,6 +122,8 @@ public class SynchronizeProductsConfig {
                 .get("computerUpdateJob")
                 .incrementer(new RunIdIncrementer())
                 .start(computerUpdateStep())
+//                .on("STOPPED").stopAndRestart(computerUpdateStep())
+//                .from(computerUpdateStep()).on("*").to(null)
                 .build();
     }
 
@@ -151,8 +158,8 @@ public class SynchronizeProductsConfig {
 
     @Bean
     public JdbcBatchItemWriter<Computer> computerUpdateWriter(DataSource dataSource) {
-        File resource = null;
         try {
+            File resource = null;
             resource = new ClassPathResource("products/upsert_computer.sql").getFile();
             String sql = new String(Files.readAllBytes(resource.toPath()));
             return new JdbcBatchItemWriterBuilder<Computer>()
@@ -166,4 +173,69 @@ public class SynchronizeProductsConfig {
             return null;
         }
     }
+
+    @Bean
+    public Step applyComputerUpdateStep() {
+        return this.stepBuilderFactory
+                .get("applyComputerUpdateStep")
+                .<Department, Department>chunk(100)
+                .reader(departmentReader(null))
+//                .processor(computerApplierProcessor())
+                .writer(departmentWriter(mainDatabaseConfiguration.mainDataSource()))
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public JdbcCursorItemReader<Department> departmentReader(DataSource dataSource) {
+        try {
+            File resource = null;
+            resource = new ClassPathResource("products/select_department.sql").getFile();
+            String sql = new String(Files.readAllBytes(resource.toPath()));
+            return new JdbcCursorItemReaderBuilder<Department>()
+                    .name("departmentReader")
+                    .dataSource(dataSource)
+                    .sql(sql)
+                    .rowMapper((resultSet, rowNumber) -> {
+                        Department department = new Department();
+                        department.setDepartmentId(resultSet.getInt("department_id"));
+                        department.setCurrentBalance(resultSet.getBigDecimal("current_balance"));
+                        return department;
+                    }).build();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.out.println("Error caused by departmentReader (problem with reading files)");
+            return null;
+        }
+    }
+
+    @Bean
+    public JdbcBatchItemWriter<Department> departmentWriter(DataSource dataSource) {
+        File resource = null;
+        try {
+            resource = new ClassPathResource("products/upsert_department.sql").getFile();
+            String sql = new String(Files.readAllBytes(resource.toPath()));
+            return new JdbcBatchItemWriterBuilder<Department>()
+                    .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
+                    .sql(sql)
+                    .dataSource(dataSource)
+                    .build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error caused by departmentWriter (problem with reading files)");
+            return null;
+        }
+    }
+
+    @Bean
+    public ComputerDao computerDao(DataSource dataSource) {
+        return new ComputerDaoSupport(dataSource);
+    }
+
+    @Bean
+    public ComputerApplierProcessor computerApplierProcessor() {
+        return new ComputerApplierProcessor(computerDao(null));
+    }
+
+
 }

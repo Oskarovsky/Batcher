@@ -55,6 +55,7 @@ public class BatchController {
         this.computerUpdateJob = computerUpdateJob;
     }
 
+    /* Function gets data from request body CSV file (encoded in Base65 format), decodes it and print all data in console */
     @RequestMapping(value = "/batch", method = RequestMethod.POST)
     @ResponseBody
     public String saveTracksFromRequestBodyToDatabase(@RequestBody String content) {
@@ -68,6 +69,7 @@ public class BatchController {
         return "Request with batch has been sent";
     }
 
+    /* Function gets filename from url, fetches file content and saves records in main database */
     @RequestMapping(value = "/job/file/{fileName}", method = RequestMethod.GET)
     public void saveTracksFromCsvToDatabase(@PathVariable String fileName) {
         try {

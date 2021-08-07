@@ -1,5 +1,6 @@
 package com.oskarro.batcher.batch.synchronizeDatabase;
 
+import com.oskarro.batcher.batch.csvToDatabase.JobCompletionNotificationListener;
 import com.oskarro.batcher.batch.synchronizeDatabase.config.BackupDatabaseConfiguration;
 import com.oskarro.batcher.batch.synchronizeDatabase.config.MainDatabaseConfiguration;
 import com.oskarro.batcher.batch.synchronizeDatabase.service.BackupDatabaseService;
@@ -15,6 +16,7 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.job.builder.FlowBuilder;
 import org.springframework.batch.core.job.flow.Flow;
+import org.springframework.batch.core.listener.JobListenerFactoryBean;
 import org.springframework.batch.core.step.tasklet.CallableTaskletAdapter;
 import org.springframework.batch.core.step.tasklet.MethodInvokingTaskletAdapter;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -86,6 +88,7 @@ public class SynchronizeConfig {
     public Job synchronizeDatabaseJob() {
         return this.jobBuilderFactory
                 .get("synchronizeDatabaseJob")
+//                .listener(JobListenerFactoryBean.getListener(new JobCompletionNotificationListener(jdbcTemplate)))
                 .start(printStartNotificationStep())
                 .next(methodCheckingMainDatabaseStep())
                 .on("FAILED").to(failureCheckingDatabaseStep())

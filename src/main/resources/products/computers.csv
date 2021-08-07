@@ -1,3 +1,4 @@
-name / description / model / price / status / orderDate / department_id
+id or 'null' / name / description / model / price / status / orderDate / department_id
 
-komputerek,nice stuff,LG,400.10,DRAFT,2010-01-08,1
+13231,komputerek,nice stuff,LG,400.10,DRAFT,2010-01-08,1
+null,COMOP,nice stuff,LG,400.10,DRAFT,2010-01-08,2

@@ -7,6 +7,8 @@ import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -22,21 +24,25 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 
     private final JdbcTemplate jdbcTemplate;
 
+    public String taskInfo;
+
+
     @Autowired
-    public JobCompletionNotificationListener(JdbcTemplate jdbcTemplate) {
+    public JobCompletionNotificationListener(JdbcTemplate jdbcTemplate, @Value("DefaultValue") String taskInfo) {
         this.jdbcTemplate = jdbcTemplate;
+        this.taskInfo = taskInfo;
     }
 
     @Override
     public void beforeJob(JobExecution jobExecution) {
-        log.info("============ JOB STARTED ============ \n");
+        log.info("============ JOB STARTED [{}] ============", taskInfo);
         System.out.printf(START_MESSAGE, jobExecution.getJobInstance().getJobName());
     }
 
     @Override
     public void afterJob(JobExecution jobExecution) {
         if (jobExecution.getStatus() == BatchStatus.COMPLETED) {
-            log.info("============ JOB FINISHED ============ Verifying the results....\n");
+            log.info("============ JOB FINISHED [{}] ============\nVerifying the results:\n", taskInfo);
 
             List<Track> results = jdbcTemplate.query("SELECT id, title, artist, version, url, code FROM tracks",
                     (rs, row) -> new Track(
