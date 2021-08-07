@@ -1,5 +1,6 @@
 package com.oskarro.batcher.batch.requestToDatabase;
 
+import com.oskarro.batcher.batch.csvToDatabase.JobCompletionNotificationListener;
 import com.oskarro.batcher.environment.main.model.Track;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -7,6 +8,7 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.listener.JobListenerFactoryBean;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
@@ -37,7 +39,10 @@ public class RequestToDatabaseJobConfig {
 
     @Bean(name = "requestToDatabaseJob")
     public Job requestToDatabaseJob() {
-        return jobBuilderFactory.get("requestToDatabaseJob")
+        return jobBuilderFactory
+                .get("requestToDatabaseJob")
+                .listener(JobListenerFactoryBean.getListener(
+                        new JobCompletionNotificationListener("Display decoded csv file content in console")))
                 .flow(requestToDatabaseStep())
                 .end()
                 .build();

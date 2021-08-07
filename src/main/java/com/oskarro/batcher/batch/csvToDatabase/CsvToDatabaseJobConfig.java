@@ -60,7 +60,8 @@ public class CsvToDatabaseJobConfig {
                 .get("csvToDatabaseJob")
                 .validator(csvTrackValidator())
                 .incrementer(new DailyJobTimestamper())
-                .listener(JobListenerFactoryBean.getListener(new JobCompletionNotificationListener(jdbcTemplate, "csvToDatabaseJob")))
+                .listener(JobListenerFactoryBean.getListener(
+                        new JobCompletionNotificationListener(jdbcTemplate, "Saving CSV content to database")))
                 .flow(csvToDatabaseStep())
                 .end()
                 .build();

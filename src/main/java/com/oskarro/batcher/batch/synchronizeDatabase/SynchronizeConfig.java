@@ -88,7 +88,8 @@ public class SynchronizeConfig {
     public Job synchronizeDatabaseJob() {
         return this.jobBuilderFactory
                 .get("synchronizeDatabaseJob")
-//                .listener(JobListenerFactoryBean.getListener(new JobCompletionNotificationListener(jdbcTemplate)))
+                .listener(JobListenerFactoryBean.getListener(
+                        new JobCompletionNotificationListener(jdbcTemplate, "Synchronize tracks in databases")))
                 .start(printStartNotificationStep())
                 .next(methodCheckingMainDatabaseStep())
                 .on("FAILED").to(failureCheckingDatabaseStep())

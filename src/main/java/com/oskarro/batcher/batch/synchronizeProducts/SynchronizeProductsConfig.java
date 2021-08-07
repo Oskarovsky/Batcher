@@ -1,5 +1,6 @@
 package com.oskarro.batcher.batch.synchronizeProducts;
 
+import com.oskarro.batcher.batch.csvToDatabase.JobCompletionNotificationListener;
 import com.oskarro.batcher.batch.synchronizeDatabase.config.BackupDatabaseConfiguration;
 import com.oskarro.batcher.batch.synchronizeDatabase.config.MainDatabaseConfiguration;
 import com.oskarro.batcher.batch.synchronizeDatabase.service.BackupDatabaseService;
@@ -19,6 +20,7 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.listener.JobListenerFactoryBean;
 import org.springframework.batch.item.ItemStreamReader;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
@@ -98,6 +100,9 @@ public class SynchronizeProductsConfig {
     public Job synchronizeProductsJob() {
         return this.jobBuilderFactory
                 .get("synchronizeProductsJob")
+                .listener(JobListenerFactoryBean.getListener(
+                        new JobCompletionNotificationListener(jdbcTemplate, "Job synchronization products in database")
+                ))
                 .incrementer(new RunIdIncrementer())
                 .start(printInformationBeforeStep())
                 .build();
@@ -108,7 +113,7 @@ public class SynchronizeProductsConfig {
         return stepBuilderFactory
                 .get("printInformationBeforeStep")
                 .tasklet(((stepContribution, chunkContext) -> {
-                    System.out.println("SYNCHRONIZE PRODUCTS IN DATABASES ALREADY RAN!");
+                    System.out.println("AUTOMATIC JOB SYNCHRONIZATION PRODUCTS IN DATABASES ALREADY RAN!");
                     return RepeatStatus.FINISHED;
                 }))
                 .build();
