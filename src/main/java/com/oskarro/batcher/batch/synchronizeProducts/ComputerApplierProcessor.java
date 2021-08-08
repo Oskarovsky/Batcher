@@ -4,8 +4,6 @@ import com.oskarro.batcher.environment.main.dao.ComputerDao;
 import com.oskarro.batcher.environment.main.model.cargo.Computer;
 import org.springframework.batch.item.ItemProcessor;
 
-import java.util.List;
-
 public class ComputerApplierProcessor implements ItemProcessor<Computer, Computer> {
 
     private final ComputerDao computerDao;

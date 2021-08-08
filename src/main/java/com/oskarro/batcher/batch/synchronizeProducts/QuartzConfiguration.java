@@ -4,8 +4,6 @@ import org.quartz.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
-
 @Configuration
 public class QuartzConfiguration {
 

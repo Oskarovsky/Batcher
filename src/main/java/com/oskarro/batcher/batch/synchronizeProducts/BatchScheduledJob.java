@@ -42,7 +42,6 @@ public class BatchScheduledJob extends QuartzJobBean {
         JobParameters jobParameters = new JobParametersBuilder(this.jobExplorer)
                 .getNextJobParameters(synchronizeProductsJob)
                 .toJobParameters();
-
         try {
             jobLauncher.run(synchronizeProductsJob, jobParameters);
         } catch (Exception ex) {

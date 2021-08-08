@@ -114,7 +114,7 @@ public class SynchronizeProductsConfig {
         return stepBuilderFactory
                 .get("printInformationBeforeStep")
                 .tasklet(((stepContribution, chunkContext) -> {
-                    System.out.println("AUTOMATIC JOB SYNCHRONIZATION PRODUCTS IN DATABASES ALREADY RAN!");
+                    System.out.println("JOB SYNCHRONIZATION PRODUCTS IN DATABASES ALREADY RAN!");
                     return RepeatStatus.FINISHED;
                 }))
                 .build();
