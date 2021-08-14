@@ -15,7 +15,7 @@ import java.util.Date;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class Console {
+public class Console extends ProductItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

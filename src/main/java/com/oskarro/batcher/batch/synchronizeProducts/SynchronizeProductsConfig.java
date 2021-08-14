@@ -10,6 +10,7 @@ import com.oskarro.batcher.environment.main.dao.ComputerDao;
 import com.oskarro.batcher.environment.main.dao.ComputerDaoSupport;
 import com.oskarro.batcher.environment.main.model.cargo.Computer;
 import com.oskarro.batcher.environment.main.model.cargo.Department;
+import com.oskarro.batcher.environment.main.model.cargo.ProductItem;
 import com.oskarro.batcher.environment.main.repo.ComputerRepository;
 import com.oskarro.batcher.environment.main.repo.ConsoleRepository;
 import com.oskarro.batcher.environment.main.repo.SmartphoneRepository;
@@ -21,7 +22,6 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.listener.JobListenerFactoryBean;
-import org.springframework.batch.item.ItemStreamReader;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
@@ -45,12 +45,11 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.sql.Date;
 
 @EnableAutoConfiguration
 @EnableBatchProcessing
 @Configuration
-public class SynchronizeProductsConfig {
+public class SynchronizeProductsConfig<T extends ProductItem> {
 
     public final JobBuilderFactory jobBuilderFactory;
     public final StepBuilderFactory stepBuilderFactory;
@@ -121,15 +120,81 @@ public class SynchronizeProductsConfig {
     }
     // endregion
 
+
+    // region UPSERT ITEM
+    @Bean
+    @StepScope
+    public Job productUpsertInMainDatabaseJob(@Value("#{jobParameters['productType']}") String productType) {
+        return this.jobBuilderFactory
+                .get("productUpdateInMainDatabaseJob")
+                .incrementer(new RunIdIncrementer())
+                .listener(JobListenerFactoryBean.getListener(
+                        new JobCompletionNotificationListener(
+                                jdbcTemplate, "Upsert " + productType + " in main database")))
+                .start(productItemUpsertStep())
+                .build();
+    }
+
+    @Bean
+    public Step productItemUpsertStep() {
+        return this.stepBuilderFactory
+                .get("productItemUpsertStep")
+                .<T, T>chunk(100)
+                .reader(productItemCsvReader())
+                .writer(productItemUpsertWriter(mainDatabaseConfiguration.mainDataSource()))
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public ProductItemCsvReader productItemCsvReader() {
+        return new ProductItemCsvReader(productItemUpsertReader(null));
+    }
+
+    @Bean
+    @StepScope
+    public FlatFileItemReader<FieldSet> productItemUpsertReader(@Value("#{jobParameters['fileContent']}") String fileContent) {
+        return new FlatFileItemReaderBuilder<FieldSet>()
+                .name("productItemUpsertReader")
+                .resource(new ByteArrayResource(fileContent.getBytes()))
+                .lineTokenizer(new DelimitedLineTokenizer())
+                .fieldSetMapper(new PassThroughFieldSetMapper())
+                .build();
+    }
+
+    @Bean
+    public JdbcBatchItemWriter<T> productItemUpsertWriter(DataSource dataSource) {
+        try {
+            File resource = null;
+            resource = new ClassPathResource("products/upsert_computer.sql").getFile();
+            String sql = new String(Files.readAllBytes(resource.toPath()));
+            return new JdbcBatchItemWriterBuilder<T>()
+                    .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
+                    .sql(sql)
+                    .dataSource(dataSource)
+                    .build();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error caused by computerUpdateWriter (problem with reading files)");
+            return null;
+        }
+    }
+
+
+    // endregion
+
+
+
     // region COMPUTER ITEM
     @Bean
     public Job computerUpdateJob() {
         return this.jobBuilderFactory
                 .get("computerUpdateJob")
                 .incrementer(new RunIdIncrementer())
+                .listener(JobListenerFactoryBean.getListener(
+                        new JobCompletionNotificationListener(
+                                jdbcTemplate, "Upsert computers in database")))
                 .start(computerUpdateStep())
-//                .on("STOPPED").stopAndRestart(computerUpdateStep())
-//                .from(computerUpdateStep()).on("*").to(null)
                 .build();
     }
 

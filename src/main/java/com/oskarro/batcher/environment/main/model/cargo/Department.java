@@ -14,7 +14,7 @@ import java.util.List;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class Department {
+public class Department extends ProductItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

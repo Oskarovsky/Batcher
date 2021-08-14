@@ -15,7 +15,7 @@ import java.util.Date;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class Smartphone {
+public class Smartphone extends ProductItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

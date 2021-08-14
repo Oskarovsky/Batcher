@@ -44,12 +44,16 @@ public class BatchController {
     @Qualifier("encodedCsvToDatabaseJob")
     Job encodedCsvToDatabaseJob;
 
+    @Qualifier("productUpsertInMainDatabaseJob")
+    Job productUpsertInMainDatabaseJob;
+
     public BatchController(JobLauncher jobLauncher,
                            JobExplorer jobExplorer,
                            Job csvToDatabaseJob,
                            Job requestToDatabaseJob,
                            Job synchronizeDatabaseJob,
                            Job computerUpdateJob,
+                           Job productUpsertInMainDatabaseJob,
                            Job encodedCsvToDatabaseJob) {
         this.jobLauncher = jobLauncher;
         this.jobExplorer = jobExplorer;
@@ -57,6 +61,7 @@ public class BatchController {
         this.requestToDatabaseJob = requestToDatabaseJob;
         this.synchronizeDatabaseJob = synchronizeDatabaseJob;
         this.computerUpdateJob = computerUpdateJob;
+        this.productUpsertInMainDatabaseJob = productUpsertInMainDatabaseJob;
         this.encodedCsvToDatabaseJob = encodedCsvToDatabaseJob;
     }
 
@@ -132,9 +137,15 @@ public class BatchController {
         return this.jobLauncher.run(synchronizeProductsJob, jobParameters).getExitStatus();
     }
 
+    /** Next steps of upsertComputersFromRequestBodyInDatabase function:
+     * 1. get encoded data from request body,
+     * 2. decode data from Base64 to CSV format,
+     * 3. display CSV content file in console,
+     * 3. upsert elements from CSV file to main database
+     */
     @RequestMapping(value = "/computers/update", method = RequestMethod.POST)
     @ResponseBody
-    public String updateComputersFromRequestBodyInDatabase(@RequestBody String content) throws Exception {
+    public String upsertComputersFromRequestBodyInDatabase(@RequestBody String content) throws Exception {
         System.out.println("==== Encoded content with Computers ====\n" + content);
         Base64 base64 = new Base64();
         String decodedString = new String(base64.decode(content));
@@ -144,6 +155,29 @@ public class BatchController {
                 .addDate("date", new Date())
                 .toJobParameters();
         jobLauncher.run(computerUpdateJob, jobParameters);
+        return "Request with batch has been sent";
+    }
+
+    /** Next steps of upsertProductsFromRequestBodyInMainDatabase function:
+     * 1. get encoded data from request body,
+     * 2. decode data from Base64 to CSV format,
+     * 3. display CSV content file in console,
+     * 3. upsert elements from CSV file to main database
+     */
+    @RequestMapping(value = "/product/{productType}/update", method = RequestMethod.POST)
+    @ResponseBody
+    public String upsertProductsFromRequestBodyInMainDatabase(@PathVariable String productType,
+                                                              @RequestBody String content) throws Exception {
+        System.out.printf("==== Encoded content with product item: %s ====\n %s\n", productType, content);
+        Base64 base64 = new Base64();
+        String decodedString = new String(base64.decode(content));
+        System.out.printf("==== Decoded content with product item: %s ====\n %s\n", productType, decodedString);
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("productType", productType)
+                .addString("fileContent", decodedString)
+                .addDate("date", new Date())
+                .toJobParameters();
+        jobLauncher.run(productUpsertInMainDatabaseJob, jobParameters);
         return "Request with batch has been sent";
     }
 }
