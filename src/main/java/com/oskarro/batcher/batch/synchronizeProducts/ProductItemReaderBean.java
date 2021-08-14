@@ -1,30 +1,39 @@
 package com.oskarro.batcher.batch.synchronizeProducts;
 
-import com.oskarro.batcher.environment.main.model.cargo.Computer;
 import com.oskarro.batcher.environment.main.model.cargo.ProductItem;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.annotation.AfterStep;
-import org.springframework.batch.item.*;
+import org.springframework.batch.item.ExecutionContext;
+import org.springframework.batch.item.ItemStreamException;
+import org.springframework.batch.item.ItemStreamReader;
 import org.springframework.batch.item.file.transform.FieldSet;
 
-public class ProductItemCsvReader <T extends ProductItem> implements ItemStreamReader<T> {
+public class ProductItemReaderBean implements ProductItemReader<ProductItem> {
 
-    private ItemStreamReader<FieldSet> fieldSetReader;
+    private final ItemStreamReader<FieldSet> fieldSetReader;
     private int recordCount = 0;
     private int expectedRecordCount = 0;
 
-    public ProductItemCsvReader(ItemStreamReader<FieldSet> fieldSetReader) {
+    public ProductItemReaderBean(ItemStreamReader<FieldSet> fieldSetReader) {
         this.fieldSetReader = fieldSetReader;
     }
 
     @Override
-    public T read() throws Exception {
+    public ProductItem read() throws Exception {
         return process(fieldSetReader.read());
     }
 
-    private T process(FieldSet fieldSet) {
-        T result = null;
+    public ProductItem process(FieldSet fieldSet) {
+        ProductItem result = null;
+        if (fieldSet != null) {
+            if (fieldSet.getFieldCount() > 1) {
+                result = new ProductItem();
+                recordCount++;
+            } else {
+                expectedRecordCount = fieldSet.readInt(0);
+            }
+        }
         return result;
     }
 
@@ -43,7 +52,7 @@ public class ProductItemCsvReader <T extends ProductItem> implements ItemStreamR
     }
 
     @Override
-    public void update(ExecutionContext executionContext) throws ItemStreamException {
+        public void update(ExecutionContext executionContext) throws ItemStreamException {
         this.fieldSetReader.update(executionContext);
     }
 

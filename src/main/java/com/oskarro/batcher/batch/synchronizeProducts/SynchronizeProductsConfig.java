@@ -49,7 +49,7 @@ import java.nio.file.Files;
 @EnableAutoConfiguration
 @EnableBatchProcessing
 @Configuration
-public class SynchronizeProductsConfig<T extends ProductItem> {
+public class SynchronizeProductsConfig {
 
     public final JobBuilderFactory jobBuilderFactory;
     public final StepBuilderFactory stepBuilderFactory;
@@ -123,15 +123,27 @@ public class SynchronizeProductsConfig<T extends ProductItem> {
 
     // region UPSERT ITEM
     @Bean
-    @StepScope
-    public Job productUpsertInMainDatabaseJob(@Value("#{jobParameters['productType']}") String productType) {
+    public Job productUpsertInMainDatabaseJob() {
         return this.jobBuilderFactory
                 .get("productUpdateInMainDatabaseJob")
                 .incrementer(new RunIdIncrementer())
                 .listener(JobListenerFactoryBean.getListener(
                         new JobCompletionNotificationListener(
-                                jdbcTemplate, "Upsert " + productType + " in main database")))
-                .start(productItemUpsertStep())
+                                jdbcTemplate, "Upsert in main database")))
+                .start(printInformationBeforeOperationStep())
+                .next(new ProductItemClassifier()).on("COMPUTER").to(computerUpdateStep())
+                .end()
+                .build();
+    }
+
+    @Bean
+    public Step printInformationBeforeOperationStep() {
+        return stepBuilderFactory
+                .get("printInformationBeforeOperationStep")
+                .tasklet(((stepContribution, chunkContext) -> {
+                    System.out.println("UPSERT VALUES IN DATABASE...");
+                    return RepeatStatus.FINISHED;
+                }))
                 .build();
     }
 
@@ -139,7 +151,7 @@ public class SynchronizeProductsConfig<T extends ProductItem> {
     public Step productItemUpsertStep() {
         return this.stepBuilderFactory
                 .get("productItemUpsertStep")
-                .<T, T>chunk(100)
+                .<ProductItem, ProductItem>chunk(100)
                 .reader(productItemCsvReader())
                 .writer(productItemUpsertWriter(mainDatabaseConfiguration.mainDataSource()))
                 .build();
@@ -147,8 +159,8 @@ public class SynchronizeProductsConfig<T extends ProductItem> {
 
     @Bean
     @StepScope
-    public ProductItemCsvReader productItemCsvReader() {
-        return new ProductItemCsvReader(productItemUpsertReader(null));
+    public ProductItemReaderBean productItemCsvReader() {
+        return new ProductItemReaderBean(productItemUpsertReader(null));
     }
 
     @Bean
@@ -163,12 +175,12 @@ public class SynchronizeProductsConfig<T extends ProductItem> {
     }
 
     @Bean
-    public JdbcBatchItemWriter<T> productItemUpsertWriter(DataSource dataSource) {
+    public JdbcBatchItemWriter<ProductItem> productItemUpsertWriter(DataSource dataSource) {
         try {
             File resource = null;
             resource = new ClassPathResource("products/upsert_computer.sql").getFile();
             String sql = new String(Files.readAllBytes(resource.toPath()));
-            return new JdbcBatchItemWriterBuilder<T>()
+            return new JdbcBatchItemWriterBuilder<ProductItem>()
                     .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
                     .sql(sql)
                     .dataSource(dataSource)
@@ -212,8 +224,8 @@ public class SynchronizeProductsConfig<T extends ProductItem> {
 
     @Bean
     @StepScope
-    public ComputerCsvReader computerCsvReader() {
-        return new ComputerCsvReader(computerUpdateReader(null));
+    public ComputerItemReader computerCsvReader() {
+        return new ComputerItemReader(computerUpdateReader(null));
     }
 
     @Bean

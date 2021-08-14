@@ -11,13 +11,13 @@ import org.springframework.batch.item.file.transform.FieldSet;
 import java.util.concurrent.ThreadLocalRandom;
 
 
-public class ComputerCsvReader implements ItemStreamReader<Computer> {
+public class ComputerItemReader implements ProductItemReader<Computer> {
 
     private ItemStreamReader<FieldSet> fieldSetReader;
     private int recordCount = 0;
     private int expectedRecordCount = 0;
 
-    public ComputerCsvReader(ItemStreamReader<FieldSet> fieldSetReader) {
+    public ComputerItemReader(ItemStreamReader<FieldSet> fieldSetReader) {
         this.fieldSetReader = fieldSetReader;
     }
 
@@ -26,7 +26,8 @@ public class ComputerCsvReader implements ItemStreamReader<Computer> {
         return process(fieldSetReader.read());
     }
 
-    private Computer process(FieldSet fieldSet) {
+    @Override
+    public Computer process(FieldSet fieldSet) {
         Computer result = null;
         if (fieldSet != null) {
             if (fieldSet.getFieldCount() > 1) {
