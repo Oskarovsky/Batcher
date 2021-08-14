@@ -1,0 +1,2 @@
+firstName / lastName / addressNumber / street / city / zipCode
+Dawid      Kwiat      12  Okulicka  Warsaw          02-777

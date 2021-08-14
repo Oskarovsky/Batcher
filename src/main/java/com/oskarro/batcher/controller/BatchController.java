@@ -47,6 +47,9 @@ public class BatchController {
     @Qualifier("productUpsertInMainDatabaseJob")
     Job productUpsertInMainDatabaseJob;
 
+    @Qualifier("readCustomersFromFileJob")
+    Job readCustomersFromFileJob;
+
     public BatchController(JobLauncher jobLauncher,
                            JobExplorer jobExplorer,
                            Job csvToDatabaseJob,
@@ -54,10 +57,12 @@ public class BatchController {
                            Job synchronizeDatabaseJob,
                            Job computerUpdateJob,
                            Job productUpsertInMainDatabaseJob,
+                           Job readCustomersFromFileJob,
                            Job encodedCsvToDatabaseJob) {
         this.jobLauncher = jobLauncher;
         this.jobExplorer = jobExplorer;
         this.csvToDatabaseJob = csvToDatabaseJob;
+        this.readCustomersFromFileJob = readCustomersFromFileJob;
         this.requestToDatabaseJob = requestToDatabaseJob;
         this.synchronizeDatabaseJob = synchronizeDatabaseJob;
         this.computerUpdateJob = computerUpdateJob;
@@ -174,6 +179,26 @@ public class BatchController {
         System.out.printf("==== Decoded content with product item: %s ====\n %s\n", productType, decodedString);
         JobParameters jobParameters = new JobParametersBuilder()
                 .addString("productType", productType)
+                .addString("fileContent", decodedString)
+                .addDate("date", new Date())
+                .toJobParameters();
+        jobLauncher.run(productUpsertInMainDatabaseJob, jobParameters);
+        return "Request with batch has been sent";
+    }
+
+    /** Next steps of readFileWithCustomers function:
+     * 1. get encoded data from request body,
+     * 2. decode data from Base64 to CSV format,
+     * 3. display CSV content file in console,
+     */
+    @RequestMapping(value = "/customer/read", method = RequestMethod.POST)
+    @ResponseBody
+    public String readFileWithCustomers(@RequestBody String content) throws Exception {
+        System.out.printf("==== Encoded content with product item: Customer ====\n %s\n", content);
+        Base64 base64 = new Base64();
+        String decodedString = new String(base64.decode(content));
+        System.out.printf("==== Decoded content with product item: Customer ====\n %s\n", decodedString);
+        JobParameters jobParameters = new JobParametersBuilder()
                 .addString("fileContent", decodedString)
                 .addDate("date", new Date())
                 .toJobParameters();
