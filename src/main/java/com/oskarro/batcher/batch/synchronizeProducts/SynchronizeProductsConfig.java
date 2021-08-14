@@ -15,11 +15,15 @@ import com.oskarro.batcher.environment.main.repo.ComputerRepository;
 import com.oskarro.batcher.environment.main.repo.ConsoleRepository;
 import com.oskarro.batcher.environment.main.repo.SmartphoneRepository;
 import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.job.flow.FlowExecutionStatus;
+import org.springframework.batch.core.job.flow.JobExecutionDecider;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.listener.JobListenerFactoryBean;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
@@ -45,6 +49,7 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Objects;
 
 @EnableAutoConfiguration
 @EnableBatchProcessing
@@ -131,9 +136,26 @@ public class SynchronizeProductsConfig {
                         new JobCompletionNotificationListener(
                                 jdbcTemplate, "Upsert in main database")))
                 .start(printInformationBeforeOperationStep())
-                .next(new ProductItemClassifier()).on("COMPUTER").to(computerUpdateStep())
+                .next(productClassifer()).on("COMPUTER").to(computerUpdateStep())
+                .from(productClassifer()).on("DEPARTMENT").to(departmentUpdateStep())
                 .end()
                 .build();
+    }
+
+    @Bean
+    public JobExecutionDecider productClassifer() {
+        return (JobExecution jobExecution, StepExecution stepExecution) -> {
+            String productType = jobExecution.getJobParameters().getString("productType");
+            if (Objects.requireNonNull(productType).equalsIgnoreCase("COMPUTER")) {
+                return new FlowExecutionStatus("COMPUTER");
+            } else if (Objects.requireNonNull(productType).equalsIgnoreCase("CONSOLE")) {
+                return new FlowExecutionStatus("CONSOLE");
+            } else if (Objects.requireNonNull(productType).equalsIgnoreCase("DEPARTMENT")) {
+                return new FlowExecutionStatus("DEPARTMENT");
+            } else {
+                return new FlowExecutionStatus("PRODUCT");
+            }
+        };
     }
 
     @Bean
@@ -269,6 +291,31 @@ public class SynchronizeProductsConfig {
     }
 
     @Bean
+    public ComputerDao computerDao(DataSource dataSource) {
+        return new ComputerDaoSupport(dataSource);
+    }
+
+    @Bean
+    public ComputerApplierProcessor computerApplierProcessor() {
+        return new ComputerApplierProcessor(computerDao(null));
+    }
+    // endregion
+
+
+    // region DEPARTMENT
+    @Bean
+    public Step departmentUpdateStep() {
+        return this.stepBuilderFactory
+                .get("computerUpdateStep")
+                .<Department, Department>chunk(100)
+                .reader(departmentReader(mainDatabaseConfiguration.mainDataSource()))
+                .writer(departmentWriter(mainDatabaseConfiguration.mainDataSource()))
+                .allowStartIfComplete(true)
+                .build();
+    }
+
+
+    @Bean
     @StepScope
     public JdbcCursorItemReader<Department> departmentReader(DataSource dataSource) {
         try {
@@ -309,16 +356,8 @@ public class SynchronizeProductsConfig {
             return null;
         }
     }
+    // endregion
 
-    @Bean
-    public ComputerDao computerDao(DataSource dataSource) {
-        return new ComputerDaoSupport(dataSource);
-    }
-
-    @Bean
-    public ComputerApplierProcessor computerApplierProcessor() {
-        return new ComputerApplierProcessor(computerDao(null));
-    }
 
 
 }
