@@ -50,6 +50,9 @@ public class BatchController {
     @Qualifier("readCustomersFromFileJob")
     Job readCustomersFromFileJob;
 
+    @Qualifier("readMultipleRecordsFromFileJob")
+    Job readMultipleRecordsFromFileJob;
+
     public BatchController(JobLauncher jobLauncher,
                            JobExplorer jobExplorer,
                            Job csvToDatabaseJob,
@@ -58,11 +61,13 @@ public class BatchController {
                            Job computerUpdateJob,
                            Job productUpsertInMainDatabaseJob,
                            Job readCustomersFromFileJob,
+                           Job readMultipleRecordsFromFileJob,
                            Job encodedCsvToDatabaseJob) {
         this.jobLauncher = jobLauncher;
         this.jobExplorer = jobExplorer;
         this.csvToDatabaseJob = csvToDatabaseJob;
         this.readCustomersFromFileJob = readCustomersFromFileJob;
+        this.readMultipleRecordsFromFileJob = readMultipleRecordsFromFileJob;
         this.requestToDatabaseJob = requestToDatabaseJob;
         this.synchronizeDatabaseJob = synchronizeDatabaseJob;
         this.computerUpdateJob = computerUpdateJob;
@@ -213,5 +218,18 @@ public class BatchController {
      * 4. create the appropriate objects
      * 5. display CSV content file in console
      */
-
+    @RequestMapping(value = "/records/read", method = RequestMethod.POST)
+    @ResponseBody
+    public String readFileWithMultipleRecords(@RequestBody String content) throws Exception {
+        System.out.printf("==== Encoded content with multiple products ====\n %s\n", content);
+        Base64 base64 = new Base64();
+        String decodedString = new String(base64.decode(content));
+        System.out.printf("==== Decoded content with multiple products ====\n %s\n", decodedString);
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("fileContent", decodedString)
+                .addDate("date", new Date())
+                .toJobParameters();
+        jobLauncher.run(readMultipleRecordsFromFileJob, jobParameters);
+        return "Request with batch has been sent";
+    }
 }
