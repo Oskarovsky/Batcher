@@ -44,7 +44,7 @@ public class BatchConfiguration {
     public Step copyFileStep() {
         return this.stepBuilderFactory
                 .get("copyFileStep")
-                .<Customer, Customer>chunk(10)
+                .<CustomerTemp, CustomerTemp>chunk(10)
                 .reader(customerFlatFileItemReader(null))
                 .writer(itemWriter())
                 .build();
@@ -52,19 +52,19 @@ public class BatchConfiguration {
 
     @Bean
     @StepScope
-    public FlatFileItemReader<Customer> customerFlatFileItemReader(@Value("#{jobParameters['customerFile']}")String inputFile) {
-        return new FlatFileItemReaderBuilder<Customer>()
+    public FlatFileItemReader<CustomerTemp> customerFlatFileItemReader(@Value("#{jobParameters['fileContent']}")String inputFile) {
+        return new FlatFileItemReaderBuilder<CustomerTemp>()
                 .name("customerFlatFileItemReader")
                 .resource(new ByteArrayResource(inputFile.getBytes()))
                 .delimited()
                 .names("firstName", "lastName", "addressNumber", "street", "city", "zipCode")
                 .linesToSkip(1)
-                .targetType(Customer.class)
+                .fieldSetMapper(new CustomerFieldSetMapper())
                 .build();
     }
 
     @Bean
-    public ItemWriter<Customer> itemWriter() {
+    public ItemWriter<CustomerTemp> itemWriter() {
         return (items) -> items.forEach(System.out::println);
     }
 }

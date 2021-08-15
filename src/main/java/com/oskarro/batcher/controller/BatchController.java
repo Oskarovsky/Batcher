@@ -202,7 +202,16 @@ public class BatchController {
                 .addString("fileContent", decodedString)
                 .addDate("date", new Date())
                 .toJobParameters();
-        jobLauncher.run(productUpsertInMainDatabaseJob, jobParameters);
+        jobLauncher.run(readCustomersFromFileJob, jobParameters);
         return "Request with batch has been sent";
     }
+
+    /** Next steps of readFileWithMultipleRecords function:
+     * 1. get encoded data from request body,
+     * 2. decode data from Base64 to CSV format,
+     * 3. split record types based on prefixes in lines
+     * 4. create the appropriate objects
+     * 5. display CSV content file in console
+     */
+
 }

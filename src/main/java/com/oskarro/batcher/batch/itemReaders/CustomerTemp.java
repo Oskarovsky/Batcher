@@ -7,13 +7,11 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class Customer {
+public class CustomerTemp {
 
     private String firstName;
     private String lastName;
-    private String addressNumber;
-    private String street;
+    private String address;
     private String city;
     private String zipCode;
-
 }
