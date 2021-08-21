@@ -232,4 +232,25 @@ public class BatchController {
         jobLauncher.run(readMultipleRecordsFromFileJob, jobParameters);
         return "Request with batch has been sent";
     }
+
+    /** Next steps of readXmlFile function:
+     * 1. get encoded data from request body,
+     * 2. decode data from Base64 to XML format,
+
+     * 5. display XML content file in console
+     */
+    @RequestMapping(value = "/xml/read", method = RequestMethod.POST)
+    @ResponseBody
+    public String readXmlFile(@RequestBody String content) throws Exception {
+        System.out.printf("==== Encoded content with XML structure ====\n %s\n", content);
+        Base64 base64 = new Base64();
+        String decodedString = new String(base64.decode(content));
+        System.out.printf("==== Decoded content with XML structure ====\n %s\n", decodedString);
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("fileContent", decodedString)
+                .addDate("date", new Date())
+                .toJobParameters();
+        jobLauncher.run(readMultipleRecordsFromFileJob, jobParameters);
+        return "Request with batch has been sent";
+    }
 }

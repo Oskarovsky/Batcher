@@ -19,6 +19,8 @@ import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.file.transform.LineTokenizer;
 import org.springframework.batch.item.file.transform.PatternMatchingCompositeLineTokenizer;
 import org.springframework.batch.item.file.transform.Range;
+import org.springframework.batch.item.xml.StaxEventItemReader;
+import org.springframework.batch.item.xml.builder.StaxEventItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -80,6 +82,39 @@ public class BatchConfiguration {
         return (items) -> items.forEach(System.out::println);
     }
 
+
+    @Bean
+    public Job readXmlFileJob() {
+        return this.jobBuilderFactory
+                .get("readXmlFileJob")
+                .incrementer(new RunIdIncrementer())
+                .start()
+    }
+
+    @Bean
+    public Step copyXmlFileStep() {
+        return this.stepBuilderFactory
+                .get("copyXmlFileStep")
+                .<Console, Console>chunk(10)
+                .reader()
+                .writer(consoleItemWriter())
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public StaxEventItemReader<Console> consoleXmlReader(@Value("#{jobParameters['fileContent']}") String content) {
+        return new StaxEventItemReaderBuilder<Console>()
+                .name("consoleXmlReader")
+                .resource(new ByteArrayResource(content.getBytes()))
+                .addFragmentRootElements("console")
+                .build();
+    }
+
+    @Bean
+    public ItemWriter<Console> consoleItemWriter() {
+        return (items) -> items.forEach(System.out::println);
+    }
 
 
 
