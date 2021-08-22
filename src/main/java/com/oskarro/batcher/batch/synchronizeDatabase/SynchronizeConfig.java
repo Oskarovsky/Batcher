@@ -214,10 +214,10 @@ public class SynchronizeConfig {
     public JdbcCursorItemReader<Track> trackItemReaderCursor(){
         return new JdbcCursorItemReaderBuilder<Track>()
                 .dataSource(mainDatabaseConfiguration.mainDataSource())
-                .rowMapper(new TrackRowMapper())
                 .name("track-reader")
                 .fetchSize(200)
                 .sql("SELECT id, title, artist, version, url, code FROM tracks")
+                .rowMapper(new TrackRowMapper())
                 .build();
     }
 

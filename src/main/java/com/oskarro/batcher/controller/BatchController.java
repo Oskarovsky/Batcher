@@ -53,6 +53,9 @@ public class BatchController {
     @Qualifier("readMultipleRecordsFromFileJob")
     Job readMultipleRecordsFromFileJob;
 
+    @Qualifier("readXmlFileJob")
+    Job readXmlFileJob;
+
     public BatchController(JobLauncher jobLauncher,
                            JobExplorer jobExplorer,
                            Job csvToDatabaseJob,
@@ -61,11 +64,13 @@ public class BatchController {
                            Job computerUpdateJob,
                            Job productUpsertInMainDatabaseJob,
                            Job readCustomersFromFileJob,
+                           Job readXmlFileJob,
                            Job readMultipleRecordsFromFileJob,
                            Job encodedCsvToDatabaseJob) {
         this.jobLauncher = jobLauncher;
         this.jobExplorer = jobExplorer;
         this.csvToDatabaseJob = csvToDatabaseJob;
+        this.readXmlFileJob = readXmlFileJob;
         this.readCustomersFromFileJob = readCustomersFromFileJob;
         this.readMultipleRecordsFromFileJob = readMultipleRecordsFromFileJob;
         this.requestToDatabaseJob = requestToDatabaseJob;
@@ -235,9 +240,7 @@ public class BatchController {
 
     /** Next steps of readXmlFile function:
      * 1. get encoded data from request body,
-     * 2. decode data from Base64 to XML format,
-
-     * 5. display XML content file in console
+     * 2. decode data from Base64 to XML format
      */
     @RequestMapping(value = "/xml/read", method = RequestMethod.POST)
     @ResponseBody
@@ -250,7 +253,7 @@ public class BatchController {
                 .addString("fileContent", decodedString)
                 .addDate("date", new Date())
                 .toJobParameters();
-        jobLauncher.run(readMultipleRecordsFromFileJob, jobParameters);
+        jobLauncher.run(readXmlFileJob, jobParameters);
         return "Request with batch has been sent";
     }
 }

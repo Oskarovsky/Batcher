@@ -1,0 +1,15 @@
+<customers>
+    <customer>
+        <firstName>Oski</firstName>
+        <lastName>Francio</lastName>
+        <address>Moni Dydy 2</address>
+        <city>Warsaw</city>
+        <zipCode>02-113</zipCode>
+        <transactions>
+            <transaction>
+                <transactionId>391391441</transactionId>
+                <price>22.10</price>
+            </transaction>
+        </transactions>
+    </customer>
+</customers>
