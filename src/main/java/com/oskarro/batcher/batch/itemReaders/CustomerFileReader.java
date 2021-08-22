@@ -22,10 +22,10 @@ public class CustomerFileReader implements ItemStreamReader<Customer> {
         curItem = null;
 
         if (item != null) {
-            item.setTransactionList(new ArrayList<>());
+            item.setTransactions(new ArrayList<>());
 
             while(peek() instanceof Transaction) {
-                item.getTransactionList().add((Transaction) curItem);
+                item.getTransactions().add((Transaction) curItem);
                 curItem = null;
             }
         }

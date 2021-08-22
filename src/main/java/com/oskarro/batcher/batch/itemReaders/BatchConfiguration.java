@@ -27,6 +27,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.oxm.Unmarshaller;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -88,31 +90,40 @@ public class BatchConfiguration {
         return this.jobBuilderFactory
                 .get("readXmlFileJob")
                 .incrementer(new RunIdIncrementer())
-                .start()
+                .start(copyFileStep())
+                .build();
     }
 
     @Bean
     public Step copyXmlFileStep() {
         return this.stepBuilderFactory
                 .get("copyXmlFileStep")
-                .<Console, Console>chunk(10)
-                .reader()
-                .writer(consoleItemWriter())
+                .<Customer, Customer>chunk(10)
+                .reader(customerXmlReader(null))
+                .writer(customerItemWriter())
                 .build();
     }
 
     @Bean
     @StepScope
-    public StaxEventItemReader<Console> consoleXmlReader(@Value("#{jobParameters['fileContent']}") String content) {
-        return new StaxEventItemReaderBuilder<Console>()
-                .name("consoleXmlReader")
+    public StaxEventItemReader<Customer> customerXmlReader(@Value("#{jobParameters['fileContent']}") String content) {
+        return new StaxEventItemReaderBuilder<Customer>()
+                .name("customerXmlReader")
                 .resource(new ByteArrayResource(content.getBytes()))
-                .addFragmentRootElements("console")
+                .addFragmentRootElements("customer")
+                .unmarshaller(customerMarshaller())
                 .build();
     }
 
     @Bean
-    public ItemWriter<Console> consoleItemWriter() {
+    public Jaxb2Marshaller customerMarshaller() {
+        Jaxb2Marshaller jaxb2Marshaller = new Jaxb2Marshaller();
+        jaxb2Marshaller.setClassesToBeBound(Customer.class, Transaction.class);
+        return jaxb2Marshaller;
+    }
+
+    @Bean
+    public ItemWriter<Customer> customerItemWriter() {
         return (items) -> items.forEach(System.out::println);
     }
 
