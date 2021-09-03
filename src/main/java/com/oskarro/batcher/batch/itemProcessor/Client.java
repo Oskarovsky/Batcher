@@ -12,11 +12,11 @@ import javax.validation.constraints.Size;
 public class Client {
 
     @NotNull(message = "First name is required")
-    @Pattern(regexp = "[a-zA-Z]", message = "First name must be alphabetical")
+    @Pattern(regexp = "[a-zA-Z]+", message = "First name must be alphabetical")
     private String firstName;
 
     @NotNull(message = "First name is required")
-    @Pattern(regexp = "[a-zA-Z]", message = "Last name must be alphabetical")
+    @Pattern(regexp = "[a-zA-Z]+", message = "Last name must be alphabetical")
     private String lastName;
 
     @NotNull(message = "Address is required")
@@ -29,7 +29,7 @@ public class Client {
 
     @NotNull(message = "State is required")
     @Size(min = 2, max = 2)
-    @Pattern(regexp = "[a-zA-Z]")
+    @Pattern(regexp = "[A-Z]{2}")
     private String state;
 
     @NotNull(message = "Zip is required")

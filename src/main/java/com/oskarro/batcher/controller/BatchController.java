@@ -56,6 +56,9 @@ public class BatchController {
     @Qualifier("readXmlFileJob")
     Job readXmlFileJob;
 
+    @Qualifier("validationClientFileJob")
+    Job validationClientFileJob;
+
     public BatchController(JobLauncher jobLauncher,
                            JobExplorer jobExplorer,
                            Job csvToDatabaseJob,
@@ -65,12 +68,14 @@ public class BatchController {
                            Job productUpsertInMainDatabaseJob,
                            Job readCustomersFromFileJob,
                            Job readXmlFileJob,
+                           Job validationClientFileJob,
                            Job readMultipleRecordsFromFileJob,
                            Job encodedCsvToDatabaseJob) {
         this.jobLauncher = jobLauncher;
         this.jobExplorer = jobExplorer;
         this.csvToDatabaseJob = csvToDatabaseJob;
         this.readXmlFileJob = readXmlFileJob;
+        this.validationClientFileJob = validationClientFileJob;
         this.readCustomersFromFileJob = readCustomersFromFileJob;
         this.readMultipleRecordsFromFileJob = readMultipleRecordsFromFileJob;
         this.requestToDatabaseJob = requestToDatabaseJob;
@@ -258,21 +263,18 @@ public class BatchController {
     }
 
     /** Next steps of itemProcessorValidator function:
-     * 1. get encoded data from request body,
-     * 2. decode data from Base64 to XML format
+     * 1. get data from csv file from resources,
+     * 2.
      */
-    @RequestMapping(value = "/xml/read", method = RequestMethod.GET)
+    @RequestMapping(value = "/client/csv", method = RequestMethod.GET)
     @ResponseBody
     public String itemProcessorValidator() throws Exception {
-        System.out.printf("==== Encoded content with XML structure ====\n %s\n", content);
-        Base64 base64 = new Base64();
-        String decodedString = new String(base64.decode(content));
-        System.out.printf("==== Decoded content with XML structure ====\n %s\n", decodedString);
+        System.out.println("==== Fetching CSV file from resource ====");
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("fileContent", decodedString)
+                .addString("clientFile", "input/client.csv")
                 .addDate("date", new Date())
                 .toJobParameters();
-        jobLauncher.run(readXmlFileJob, jobParameters);
+        jobLauncher.run(validationClientFileJob, jobParameters);
         return "Request with batch has been sent";
     }
 }
