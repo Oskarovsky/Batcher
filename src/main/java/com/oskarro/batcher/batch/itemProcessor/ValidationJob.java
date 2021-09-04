@@ -10,6 +10,8 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.validator.BeanValidatingItemProcessor;
+import org.springframework.batch.item.validator.ValidatingItemProcessor;
+import org.springframework.batch.jsr.item.ItemProcessorAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -43,6 +45,21 @@ public class ValidationJob {
     }
 
     @Bean
+    public UniqueLastNameValidator validator() {
+        UniqueLastNameValidator validator = new UniqueLastNameValidator();
+        validator.setName("validator");
+        return validator;
+    }
+
+    @Bean
+    public ValidatingItemProcessor<Client> clientValidatingItemProcessor() {
+        ValidatingItemProcessor<Client> validatingItemProcessor = new ValidatingItemProcessor<>(validator());
+        validatingItemProcessor.setFilter(true);
+        return validatingItemProcessor;
+    }
+
+
+    @Bean
     public ItemWriter<Client> clientItemWriter() {
         return items -> items.forEach(System.out::println);
     }
@@ -56,10 +73,11 @@ public class ValidationJob {
     public Step copyClientFileStep() {
         return stepBuilderFactory
                 .get("copyClientFileStep")
-                .<Client, Client>chunk(10)
+                .<Client, Client>chunk(5)
                 .reader(clientItemReader(null))
                 .processor(clientBeanValidatingItemProcessor())
                 .writer(clientItemWriter())
+                .stream(validator())
                 .build();
     }
 
