@@ -59,12 +59,16 @@ public class BatchController {
     @Qualifier("validationClientFileJob")
     Job validationClientFileJob;
 
+    @Qualifier("formatPlayerJob")
+    Job formatPlayerJob;
+
     public BatchController(JobLauncher jobLauncher,
                            JobExplorer jobExplorer,
                            Job csvToDatabaseJob,
                            Job requestToDatabaseJob,
                            Job synchronizeDatabaseJob,
                            Job computerUpdateJob,
+                           Job formatPlayerJob,
                            Job productUpsertInMainDatabaseJob,
                            Job readCustomersFromFileJob,
                            Job readXmlFileJob,
@@ -75,6 +79,7 @@ public class BatchController {
         this.jobExplorer = jobExplorer;
         this.csvToDatabaseJob = csvToDatabaseJob;
         this.readXmlFileJob = readXmlFileJob;
+        this.formatPlayerJob = formatPlayerJob;
         this.validationClientFileJob = validationClientFileJob;
         this.readCustomersFromFileJob = readCustomersFromFileJob;
         this.readMultipleRecordsFromFileJob = readMultipleRecordsFromFileJob;
@@ -275,6 +280,23 @@ public class BatchController {
                 .addDate("date", new Date())
                 .toJobParameters();
         jobLauncher.run(validationClientFileJob, jobParameters);
+        return "Request with batch has been sent";
+    }
+
+    /** Next steps of formatPlayerFromFile function:
+     * 1. get data from csv file from resources,
+     * 2.
+     */
+    @RequestMapping(value = "/player/csv", method = RequestMethod.GET)
+    @ResponseBody
+    public String formatPlayerFromFile() throws Exception {
+        System.out.println("==== Fetching CSV file from resource ====");
+        JobParameters jobParameters = new JobParametersBuilder()
+                .addString("playerFile", "/input/player.csv")
+                .addString("outputFile", "/input/output.csv")
+                .addDate("date", new Date())
+                .toJobParameters();
+        jobLauncher.run(formatPlayerJob, jobParameters);
         return "Request with batch has been sent";
     }
 }
