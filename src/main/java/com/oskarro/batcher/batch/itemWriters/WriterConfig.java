@@ -17,6 +17,8 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
 
 @EnableAutoConfiguration
@@ -39,7 +41,7 @@ public class WriterConfig {
             @Value("#{jobParameters['playerFile']}")String inputFile) {
         return new FlatFileItemReaderBuilder<Player>()
                 .name("playerFlatFileItemReader")
-                .resource(new ClassPathResource(inputFile))
+                .resource(new PathResource(inputFile))
                 .delimited()
                 .names("firstName", "lastName", "address", "city", "state", "zip", "phone")
                 .targetType(Player.class)
@@ -52,7 +54,7 @@ public class WriterConfig {
             @Value("#{jobParameters['outputFile']}")String outputFile) {
         return new FlatFileItemWriterBuilder<Player>()
                 .name("playerFlatFileItemWriter")
-                .resource(new ClassPathResource(outputFile))
+                .resource(new PathResource(outputFile))
                 .formatted()
                 .format("%s %s lives at %s %s in %s, %s. (contact: %s)")
                 .names("firstName", "lastName", "address", "city", "state", "zip", "phone")

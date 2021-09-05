@@ -292,8 +292,8 @@ public class BatchController {
     public String formatPlayerFromFile() throws Exception {
         System.out.println("==== Fetching CSV file from resource ====");
         JobParameters jobParameters = new JobParametersBuilder()
-                .addString("playerFile", "/input/player.csv")
-                .addString("outputFile", "/input/output.csv")
+                .addString("playerFile", "src/main/resources/input/player.csv")
+                .addString("outputFile", "src/main/resources/input/output.csv")
                 .addDate("date", new Date())
                 .toJobParameters();
         jobLauncher.run(formatPlayerJob, jobParameters);
